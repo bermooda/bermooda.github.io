@@ -1,0 +1,30 @@
+---
+const stack = [
+	'React Router',
+	'React 19',
+	'Prisma',
+	'SQLite / PostgreSQL',
+	'Stripe',
+	'better-auth',
+	'Vite',
+	'Tailwind CSS',
+];
+---
+
+<section class="border-t border-slate-200 bg-surface-2" aria-labelledby="stack-heading">
+	<div class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+		<div class="text-center">
+			<h2 id="stack-heading" class="font-display text-2xl font-bold text-ink sm:text-3xl">
+				Built with a modern Node stack
+			</h2>
+			<p class="mt-3 text-muted">Familiar tools, one deployable service.</p>
+		</div>
+		<ul class="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+			{
+				stack.map((item) => (
+					<li class="text-sm font-semibold tracking-wide text-ink/70">{item}</li>
+				))
+			}
+		</ul>
+	</div>
+</section>
