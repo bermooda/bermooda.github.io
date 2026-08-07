@@ -1,0 +1,68 @@
+---
+import { GITHUB_URL } from '../consts';
+---
+
+<section class="relative overflow-hidden">
+	<div
+		class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(35,166,179,0.18),_transparent_55%),linear-gradient(to_bottom,_#f8fafc,_#ffffff)]"
+		aria-hidden="true"
+	></div>
+	<div
+		class="pointer-events-none absolute inset-0 opacity-[0.035] mix-blend-multiply"
+		style="background-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\");"
+		aria-hidden="true"
+	></div>
+
+	<div class="relative mx-auto max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:pb-28">
+		<img
+			src="/logo-full.svg"
+			alt="bermooda"
+			class="animate-fade-up mx-auto h-10 w-auto sm:h-12"
+			width="280"
+			height="41"
+		/>
+
+		<h1
+			class="animate-fade-up animation-delay-100 mx-auto mt-8 max-w-3xl text-center font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl lg:text-6xl"
+		>
+			Own your ecommerce stack
+		</h1>
+
+		<p
+			class="animate-fade-up animation-delay-200 mx-auto mt-5 max-w-2xl text-center text-lg text-muted sm:text-xl"
+		>
+			Open-source ecommerce as one deployable app — themed storefront, merchant admin, and REST API.
+		</p>
+
+		<div class="animate-fade-up animation-delay-300 mt-8 flex flex-wrap items-center justify-center gap-3">
+			<a
+				href="#get-started"
+				class="rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark"
+			>
+				Get Started
+			</a>
+			<a
+				href={GITHUB_URL}
+				class="rounded-md border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-ink transition hover:border-brand hover:text-brand"
+				target="_blank"
+				rel="noopener noreferrer"
+			>
+				GitHub
+			</a>
+		</div>
+
+		<div
+			class="animate-fade-up animation-delay-300 mx-auto mt-12 max-w-2xl overflow-hidden rounded-xl border border-slate-200 bg-ink shadow-lg shadow-slate-900/10"
+		>
+			<div class="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
+				<span class="size-2.5 rounded-full bg-red-400/80"></span>
+				<span class="size-2.5 rounded-full bg-amber-400/80"></span>
+				<span class="size-2.5 rounded-full bg-emerald-400/80"></span>
+				<span class="ml-2 text-xs text-white/50">terminal</span>
+			</div>
+			<pre
+				class="overflow-x-auto p-4 text-sm leading-relaxed text-slate-100 sm:text-[15px]"><code><span class="text-brand">$</span> npm i -g @bermooda/cli@latest
+<span class="text-brand">$</span> bermooda install --local --dir ./my-shop -y</code></pre>
+		</div>
+	</div>
+</section>
