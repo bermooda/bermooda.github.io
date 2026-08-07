@@ -1,5 +1,4 @@
-// Place any global data in this file.
-// You can import this data from anywhere in your site by using the `import` keyword.
-
-export const SITE_TITLE = 'Astro Blog';
-export const SITE_DESCRIPTION = 'Welcome to my website!';
+export const SITE_TITLE = 'bermooda';
+export const SITE_DESCRIPTION =
+	'Own your ecommerce stack — open-source ecommerce with storefront, admin, and REST API in one app.';
+export const GITHUB_URL = 'https://github.com/bermooda/bermooda';
