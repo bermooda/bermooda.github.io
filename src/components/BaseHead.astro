@@ -30,7 +30,7 @@ const imageURL = new URL(image, Astro.site ?? Astro.url);
 
 <link rel="canonical" href={canonicalURL} />
 
-<title>{title === SITE_TITLE ? `${SITE_TITLE} — ${SITE_DESCRIPTION}` : `${title} · ${SITE_TITLE}`}</title>
+<title>{title === SITE_TITLE ? `${SITE_TITLE} · ${SITE_DESCRIPTION}` : `${title} · ${SITE_TITLE}`}</title>
 <meta name="description" content={description} />
 
 <meta property="og:type" content="website" />

@@ -23,14 +23,14 @@ const pluginHtml = `<span class="text-violet-300">export default</span> definePl
 			<p class="mt-4 text-body text-mute">
 				Themes live under <code class="font-mono text-[0.95em] text-ink">app/themes/*</code> and own the
 				shop UI. Plugins under <code class="font-mono text-[0.95em] text-ink">app/plugins/*</code> register
-				hooks, providers, and optional admin pages — without forking core.
+				hooks, providers, and optional admin pages, without forking core.
 			</p>
 			<p class="mt-3 text-body text-mute">
 				Activate a theme or toggle a plugin in admin. The CLI can add, update, and remove both.
 			</p>
 		</div>
 
-		<div class="mt-14 grid items-start gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+		<div class="mt-14 grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
 			<BrowserChrome url="localhost:3000/admin/themes" label="admin">
 				<ThemesAdmin />
 			</BrowserChrome>

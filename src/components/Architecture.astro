@@ -20,7 +20,7 @@ const notes = [
 	},
 	{
 		title: 'Plugins register, they don’t fork',
-		body: 'Hooks, providers, and optional admin or storefront UI — enabled without touching core.',
+		body: 'Hooks, providers, and optional admin or storefront UI, enabled without touching core.',
 	},
 ];
 ---
@@ -37,11 +37,11 @@ const notes = [
 				plugins sit in one repository with ordinary files.
 			</p>
 			<p class="mt-3 text-body text-mute">
-				If you want a full shop you can fork, understand, and grow — this is the map.
+				If you want a full shop you can fork, understand, and grow. This is the map.
 			</p>
 		</div>
 
-		<div class="mt-14 grid items-start gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+		<div class="mt-14 grid min-w-0 items-start gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
 			<CodeWindow title="app/" meta="repository" html={treeHtml} />
 			<ul class="space-y-6">
 				{

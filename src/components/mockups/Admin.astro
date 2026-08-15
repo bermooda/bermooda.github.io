@@ -7,7 +7,7 @@ const orders = [
 ];
 ---
 
-<div class="flex min-h-[22rem] text-[12px] leading-snug text-ink">
+<div class="flex min-h-[22rem] min-w-0 text-[12px] leading-snug text-ink">
 	<aside class="hidden w-36 shrink-0 border-r border-hairline bg-soft/80 p-3 sm:block">
 		<p class="px-2 text-[11px] font-medium tracking-tight">Cove Admin</p>
 		<ul class="mt-4 space-y-0.5 text-mute">
@@ -42,13 +42,13 @@ const orders = [
 			</div>
 		</div>
 		<div class="mt-3 overflow-hidden rounded-lg border border-hairline">
-			<table class="w-full text-left">
+			<table class="w-full table-fixed text-left">
 				<thead class="border-b border-hairline bg-soft text-[10px] uppercase tracking-wide text-mute">
 					<tr>
-						<th class="px-2.5 py-1.5 font-medium">Order</th>
+						<th class="w-16 px-2.5 py-1.5 font-medium">Order</th>
 						<th class="px-2.5 py-1.5 font-medium">Customer</th>
-						<th class="hidden px-2.5 py-1.5 font-medium sm:table-cell">Total</th>
-						<th class="px-2.5 py-1.5 font-medium">Status</th>
+						<th class="hidden w-20 px-2.5 py-1.5 font-medium sm:table-cell">Total</th>
+						<th class="w-[4.75rem] px-2.5 py-1.5 font-medium">Status</th>
 					</tr>
 				</thead>
 				<tbody>
