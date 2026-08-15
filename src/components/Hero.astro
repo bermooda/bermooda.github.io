@@ -11,37 +11,42 @@ const installHtml = `<span class="text-accent">$</span> npm i -g @bermooda/cli@l
 ---
 
 <section class="relative overflow-hidden">
-	<div class="hero-grid pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-		<svg
-			class="absolute top-1/2 left-1/2 size-[1800px] -translate-x-1/2 -translate-y-1/2 rotate-45 text-black/10"
-			width="100%"
-			height="100%"
-		>
-			<defs>
-				<pattern id="hero-diamond-grid" x="-1" y="-1" width="40" height="40" patternUnits="userSpaceOnUse">
-					<path d="M 40 0 L 0 0 0 40" fill="transparent" stroke="currentColor" stroke-width="1"></path>
-				</pattern>
-			</defs>
-			<rect fill="url(#hero-diamond-grid)" width="100%" height="100%"></rect>
-		</svg>
-	</div>
-
 	<div class="relative mx-auto max-w-page px-4 pt-hero pb-20 sm:px-6 lg:pb-28">
 		<p class="animate-fade-up eyebrow text-center">Open source · one deployable app</p>
 		<h1
-			class="animate-fade-up animation-delay-200 mx-auto mt-4 max-w-4xl text-center text-hero font-medium text-pretty text-ink"
+			class="animate-fade-up animation-delay-200 relative z-10 mx-auto mt-4 max-w-4xl text-center text-hero font-medium text-pretty text-ink"
 		>
 			Own your ecommerce stack
 		</h1>
 		<p
-			class="animate-fade-up animation-delay-400 mx-auto mt-5 max-w-copy text-center text-lg text-balance text-mute sm:text-xl"
+			class="animate-fade-up animation-delay-400 relative z-10 mx-auto mt-5 max-w-copy text-center text-lg text-balance text-mute sm:text-xl"
 		>
 			Open-source ecommerce as one deployable app, with a themed storefront, merchant admin, and REST API.
 		</p>
 
-		<div class="animate-fade-up animation-delay-400 mt-8 flex flex-wrap items-center justify-center gap-3">
-			<a href="#get-started" class="btn btn-primary"> Get Started </a>
-			<a href={GITHUB_URL} class="btn btn-secondary" target="_blank" rel="noopener noreferrer"> GitHub </a>
+		<div class="relative mt-8">
+			<div
+				class="hero-grid pointer-events-none absolute inset-x-[calc(50%-50vw)] bottom-full h-36 w-screen overflow-hidden sm:h-44"
+				aria-hidden="true"
+			>
+				<svg
+					class="absolute top-1/2 left-1/2 size-[1800px] -translate-x-1/2 -translate-y-1/2 rotate-45 text-black/10"
+					width="100%"
+					height="100%"
+				>
+					<defs>
+						<pattern id="hero-diamond-grid" x="-1" y="-1" width="40" height="40" patternUnits="userSpaceOnUse">
+							<path d="M 40 0 L 0 0 0 40" fill="transparent" stroke="currentColor" stroke-width="1"></path>
+						</pattern>
+					</defs>
+					<rect fill="url(#hero-diamond-grid)" width="100%" height="100%"></rect>
+				</svg>
+			</div>
+
+			<div class="animate-fade-up animation-delay-400 relative z-10 flex flex-wrap items-center justify-center gap-3">
+				<a href="#get-started" class="btn btn-primary"> Get Started </a>
+				<a href={GITHUB_URL} class="btn btn-secondary" target="_blank" rel="noopener noreferrer"> GitHub </a>
+			</div>
 		</div>
 
 		<div class="animate-fade-up animation-delay-400 relative mx-auto mt-16 w-full min-w-0 max-w-5xl">
