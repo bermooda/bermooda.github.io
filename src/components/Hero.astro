@@ -11,7 +11,20 @@ const installHtml = `<span class="text-accent">$</span> npm i -g @bermooda/cli@l
 ---
 
 <section class="relative overflow-hidden">
-	<div class="hero-grid pointer-events-none absolute inset-0" aria-hidden="true"></div>
+	<div class="hero-grid pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+		<svg
+			class="absolute top-1/2 left-1/2 size-[1800px] -translate-x-1/2 -translate-y-1/2 rotate-45 text-black/10"
+			width="100%"
+			height="100%"
+		>
+			<defs>
+				<pattern id="hero-diamond-grid" x="-1" y="-1" width="40" height="40" patternUnits="userSpaceOnUse">
+					<path d="M 40 0 L 0 0 0 40" fill="transparent" stroke="currentColor" stroke-width="1"></path>
+				</pattern>
+			</defs>
+			<rect fill="url(#hero-diamond-grid)" width="100%" height="100%"></rect>
+		</svg>
+	</div>
 
 	<div class="relative mx-auto max-w-page px-4 pt-hero pb-20 sm:px-6 lg:pb-28">
 		<p class="animate-fade-up eyebrow text-center">Open source · one deployable app</p>
