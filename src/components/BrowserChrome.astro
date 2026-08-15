@@ -1,0 +1,27 @@
+---
+interface Props {
+	url?: string;
+	label?: string;
+}
+
+const { url = 'localhost:3000', label } = Astro.props;
+---
+
+<div
+	class="overflow-hidden rounded-xl border border-hairline bg-canvas shadow-mock"
+>
+	<div class="flex items-center gap-2 border-b border-hairline bg-soft px-3 py-2">
+		<span class="size-2.5 rounded-full bg-[#FF5F57]"></span>
+		<span class="size-2.5 rounded-full bg-[#FEBC2E]"></span>
+		<span class="size-2.5 rounded-full bg-[#28C840]"></span>
+		<div
+			class="ml-1 min-w-0 flex-1 truncate rounded-md border border-hairline bg-canvas px-2.5 py-0.5 font-mono text-[11px] text-mute"
+		>
+			{url}
+		</div>
+		{label ? <span class="hidden font-mono text-[11px] text-mute sm:inline">{label}</span> : null}
+	</div>
+	<div class="bg-canvas">
+		<slot />
+	</div>
+</div>

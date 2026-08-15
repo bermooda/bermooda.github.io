@@ -1,41 +1,33 @@
 ---
-import { GITHUB_URL } from '../consts';
-import HeaderLink from './HeaderLink.astro';
+import { DOCS_URL, GITHUB_URL } from '../consts';
 ---
 
 <header
 	id="site-header"
-	class="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur-md"
+	class="sticky top-0 z-50 border-b border-hairline bg-canvas/80 backdrop-blur-sm"
 >
-	<nav class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+	<nav class="mx-auto flex h-nav max-w-page items-center justify-between gap-4 px-4 sm:px-6">
 		<a href="/" class="flex shrink-0 items-center" aria-label="bermooda home">
 			<img src="/logo-full.svg" alt="bermooda" class="h-5 w-auto" width="140" height="21" />
 		</a>
 
-		<div class="hidden items-center gap-6 md:flex">
+		<div class="hidden items-center gap-1 md:flex">
 			<a
-				href={GITHUB_URL}
-				class="text-sm font-medium text-ink/80 transition hover:text-brand"
+				href={DOCS_URL}
+				class="rounded-lg px-3 py-1.5 text-[15px] font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
 				target="_blank"
 				rel="noopener noreferrer">Docs</a
 			>
-			<HeaderLink href="/blog">Blog</HeaderLink>
 			<a
 				href={GITHUB_URL}
-				class="text-sm font-medium text-ink/80 transition hover:text-brand"
+				class="rounded-lg px-3 py-1.5 text-[15px] font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
 				target="_blank"
 				rel="noopener noreferrer"
-				aria-label="bermooda on GitHub"
 			>
 				GitHub
 			</a>
 		</div>
 
-		<a
-			href="/#get-started"
-			class="rounded-md bg-brand px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark"
-		>
-			Get Started
-		</a>
+		<a href="/#get-started" class="btn btn-primary h-10 px-4 text-sm sm:h-10"> Get Started </a>
 	</nav>
 </header>

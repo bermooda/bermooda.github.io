@@ -1,11 +1,19 @@
 ---
+import Announcement from '../components/Announcement.astro';
+import Api from '../components/Api.astro';
+import Architecture from '../components/Architecture.astro';
 import BaseHead from '../components/BaseHead.astro';
-import Features from '../components/Features.astro';
+import Cli from '../components/Cli.astro';
+import Deploy from '../components/Deploy.astro';
 import Footer from '../components/Footer.astro';
 import GetStarted from '../components/GetStarted.astro';
 import Header from '../components/Header.astro';
 import Hero from '../components/Hero.astro';
+import LocalFirst from '../components/LocalFirst.astro';
+import Primitives from '../components/Primitives.astro';
 import Stack from '../components/Stack.astro';
+import Surfaces from '../components/Surfaces.astro';
+import Themes from '../components/Themes.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 ---
 
@@ -14,12 +22,22 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 	</head>
-	<body class="flex min-h-screen flex-col">
+	<body class="relative flex min-h-screen flex-col">
+		<div class="page-grain pointer-events-none fixed inset-0 z-[60] opacity-[0.04] mix-blend-multiply" aria-hidden="true"
+		></div>
+		<Announcement />
 		<Header />
 		<main class="flex-1">
 			<Hero />
-			<Features />
+			<Surfaces />
+			<Primitives />
+			<Themes />
+			<LocalFirst />
+			<Architecture />
+			<Api />
+			<Cli />
 			<GetStarted />
+			<Deploy />
 			<Stack />
 		</main>
 		<Footer />

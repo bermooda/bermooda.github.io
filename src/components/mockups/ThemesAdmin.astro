@@ -1,0 +1,65 @@
+---
+const themes = [
+	{ id: '@bermooda/theme-default', title: 'Default', active: true },
+	{ id: '@bermooda/theme-aurora', title: 'Aurora', active: false },
+];
+
+const plugins = [
+	{ id: '@bermooda/plugin-meilisearch', title: 'Meilisearch', enabled: true },
+	{ id: '@bermooda/plugin-resend', title: 'Resend', enabled: true },
+	{ id: '@bermooda/plugin-stripe-tax', title: 'Stripe Tax', enabled: false },
+];
+---
+
+<div class="grid gap-0 text-[12px] leading-snug text-ink lg:grid-cols-2">
+	<div class="border-b border-hairline p-4 lg:border-r lg:border-b-0">
+		<p class="text-[15px] font-medium tracking-tight">Themes</p>
+		<p class="mt-0.5 text-mute">Activate a storefront package. No fork required.</p>
+		<ul class="mt-4 space-y-2">
+			{
+				themes.map((theme) => (
+					<li class:list={['rounded-lg border p-3', theme.active ? 'border-accent bg-accent-faded/40' : 'border-hairline']}>
+						<div class="flex items-center justify-between gap-2">
+							<span class="font-medium">{theme.title}</span>
+							{theme.active ? (
+								<span class="rounded-md bg-accent px-2 py-0.5 text-[10px] font-medium text-white">Active</span>
+							) : (
+								<span class="rounded-md border border-hairline px-2 py-0.5 text-[10px] font-medium">Activate</span>
+							)}
+						</div>
+						<p class="mt-1 font-mono text-[10px] text-mute">{theme.id}</p>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+	<div class="p-4">
+		<p class="text-[15px] font-medium tracking-tight">Plugins</p>
+		<p class="mt-0.5 text-mute">Hooks, providers, and admin pages — toggled live.</p>
+		<ul class="mt-4 divide-y divide-hairline rounded-lg border border-hairline">
+			{
+				plugins.map((plugin) => (
+					<li class="flex items-center justify-between gap-3 px-3 py-2.5">
+						<div class="min-w-0">
+							<p class="truncate font-medium">{plugin.title}</p>
+							<p class="truncate font-mono text-[10px] text-mute">{plugin.id}</p>
+						</div>
+						<span
+							class:list={[
+								'relative h-5 w-9 rounded-full',
+								plugin.enabled ? 'bg-accent' : 'bg-line',
+							]}
+						>
+							<span
+								class:list={[
+									'absolute top-0.5 size-4 rounded-full bg-white shadow-control transition',
+									plugin.enabled ? 'right-0.5' : 'left-0.5',
+								]}
+							/>
+						</span>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</div>

@@ -1,31 +1,75 @@
 ---
-import { GITHUB_URL } from '../consts';
+import { CLI_URL, DOCS_URL, GITHUB_URL } from '../consts';
 
 const year = new Date().getFullYear();
+
+type FooterLink = { href: string; label: string; external?: boolean };
+type FooterColumn = { label: string; links: FooterLink[] };
+
+const columns: FooterColumn[] = [
+	{
+		label: 'Product',
+		links: [
+			{ href: '/#surfaces', label: 'Surfaces' },
+			{ href: '/#primitives', label: 'Primitives' },
+			{ href: '/#themes', label: 'Themes & plugins' },
+			{ href: '/#get-started', label: 'Get started' },
+		],
+	},
+	{
+		label: 'Docs',
+		links: [
+			{ href: DOCS_URL, label: 'README', external: true },
+			{ href: `${GITHUB_URL}/blob/master/docs/api.md`, label: 'REST API', external: true },
+			{ href: `${GITHUB_URL}/blob/master/docs/themes.md`, label: 'Themes', external: true },
+			{ href: `${GITHUB_URL}/blob/master/docs/plugins.md`, label: 'Plugins', external: true },
+		],
+	},
+	{
+		label: 'Source',
+		links: [
+			{ href: GITHUB_URL, label: 'bermooda', external: true },
+			{ href: CLI_URL, label: 'CLI', external: true },
+			{ href: `${GITHUB_URL}/issues`, label: 'Issues', external: true },
+		],
+	},
+];
 ---
 
-<footer class="border-t border-slate-200 bg-surface">
-	<div
-		class="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-12 sm:flex-row sm:items-center sm:justify-between sm:px-6"
-	>
+<footer class="border-t border-hairline bg-canvas">
+	<div class="mx-auto grid max-w-page gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1.2fr_2fr]">
 		<div class="space-y-3">
 			<a href="/" aria-label="bermooda home">
 				<img src="/logo-full.svg" alt="bermooda" class="h-6 w-auto" width="180" height="27" />
 			</a>
-			<p class="text-sm text-muted">Own your ecommerce stack.</p>
+			<p class="max-w-xs text-sm text-mute">Own your ecommerce stack.</p>
 		</div>
 
-		<nav class="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-ink/80">
-			<a href={GITHUB_URL} class="transition hover:text-brand" target="_blank" rel="noopener noreferrer"
-				>Docs</a
-			>
-			<a href="/blog" class="transition hover:text-brand">Blog</a>
-			<a href={GITHUB_URL} class="transition hover:text-brand" target="_blank" rel="noopener noreferrer"
-				>GitHub</a
-			>
-		</nav>
+		<div class="grid grid-cols-2 gap-8 sm:grid-cols-3">
+			{
+				columns.map((column) => (
+					<div>
+						<p class="text-[12px] font-semibold uppercase tracking-[0.075em] text-mute">{column.label}</p>
+						<ul class="mt-3 space-y-2 text-[15px] font-medium tracking-tight text-ink">
+							{column.links.map((link) => (
+								<li>
+									<a
+										href={link.href}
+										class="transition duration-100 hover:text-accent"
+										target={link.external ? '_blank' : undefined}
+										rel={link.external ? 'noopener noreferrer' : undefined}
+									>
+										{link.label}
+									</a>
+								</li>
+							))}
+						</ul>
+					</div>
+				))
+			}
+		</div>
 	</div>
-	<div class="border-t border-slate-200/80 py-4 text-center text-xs text-muted">
-		&copy; {year} bermooda. Open source under the project license.
+	<div class="border-t border-hairline py-4 text-center text-xs text-mute">
+		&copy; {year} bermooda. Open source. Currently in beta.
 	</div>
 </footer>
