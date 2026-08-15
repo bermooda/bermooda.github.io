@@ -4,15 +4,15 @@ import { GITHUB_URL } from '../consts';
 
 <div class="border-b border-hairline bg-gradient-to-b from-accent-faded to-canvas">
 	<div
-		class="mx-auto flex max-w-page flex-col items-center justify-center gap-2 px-4 py-2.5 text-center text-sm text-ink sm:flex-row sm:gap-3 sm:px-6"
+		class="mx-auto flex max-w-page flex-row flex-nowrap items-center justify-center gap-2 px-4 py-2.5 text-center text-sm text-ink sm:gap-3 sm:px-6"
 	>
-		<p>
-			<span class="font-medium">Currently in beta.</span>
-			<span class="text-mute"> Behavior may change.</span>
+		<p class="whitespace-nowrap">
+			<span class="font-bold">Beta.</span>
+			<span class="text-mute"> Behavior might change.</span>
 		</p>
 		<a
 			href={GITHUB_URL}
-			class="inline-flex h-7 items-center rounded-lg border border-hairline bg-canvas px-2.5 text-[12px] font-medium tracking-tight text-ink transition duration-100 hover:bg-soft"
+			class="inline-flex h-7 shrink-0 items-center rounded-lg border border-hairline bg-canvas px-2.5 text-[12px] font-medium tracking-tight text-ink transition duration-100 hover:bg-soft"
 			target="_blank"
 			rel="noopener noreferrer"
 		>
