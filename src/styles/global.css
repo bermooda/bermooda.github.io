@@ -78,7 +78,28 @@
 	}
 
 	.hero-grid {
-		mask-image: radial-gradient(ellipse at top, black 30%, transparent 75%);
+		--hero-grid-mask: linear-gradient(
+			to bottom,
+			transparent 0%,
+			black 8rem,
+			black calc(100% - 14rem),
+			transparent 100%
+		);
+		-webkit-mask-image: var(--hero-grid-mask);
+		mask-image: var(--hero-grid-mask);
+		-webkit-mask-repeat: no-repeat;
+		mask-repeat: no-repeat;
+		animation: fade-in 1.2s ease-out both;
+		animation-delay: 800ms;
+	}
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
 	}
 }
 
