@@ -1,0 +1,22 @@
+---
+import { GITHUB_URL } from '../consts';
+---
+
+<div class="border-b border-hairline bg-gradient-to-b from-accent-faded to-canvas">
+	<div
+		class="mx-auto flex max-w-page flex-col items-center justify-center gap-2 px-4 py-2.5 text-center text-sm text-ink sm:flex-row sm:gap-3 sm:px-6"
+	>
+		<p>
+			<span class="font-medium">Beta.</span>
+			<span class="text-mute"> APIs, schemas, and CLI behavior may change before 1.0.</span>
+		</p>
+		<a
+			href={GITHUB_URL}
+			class="inline-flex h-7 items-center rounded-lg border border-hairline bg-canvas px-2.5 text-[12px] font-medium tracking-tight text-ink transition duration-100 hover:bg-soft"
+			target="_blank"
+			rel="noopener noreferrer"
+		>
+			Readme
+		</a>
+	</div>
+</div>

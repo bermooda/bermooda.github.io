@@ -1,0 +1,36 @@
+---
+const products = [
+	{ name: 'Ceramic pour-over', price: '$48', tone: 'bg-[#E7EEE8]', mark: 'bg-[#B7C7B8]' },
+	{ name: 'Linen throw', price: '$89', tone: 'bg-[#EEE8E2]', mark: 'bg-[#D2C4B6]' },
+	{ name: 'Oak cutting board', price: '$64', tone: 'bg-[#E9E4D8]', mark: 'bg-[#C4B48F]' },
+	{ name: 'Brass wall sconce', price: '$120', tone: 'bg-[#EFE6D6]', mark: 'bg-[#C9A66B]' },
+];
+---
+
+<div class="text-[12px] leading-snug text-ink">
+	<header class="flex items-center justify-between border-b border-hairline px-4 py-3">
+		<span class="text-[13px] font-medium tracking-tight">Cove</span>
+		<nav class="flex items-center gap-4 text-mute">
+			<span>Shop</span>
+			<span class="hidden sm:inline">About</span>
+			<span class="font-medium text-ink">Cart · 2</span>
+		</nav>
+	</header>
+	<div class="px-4 py-4">
+		<p class="font-mono text-[10px] uppercase tracking-[0.12em] text-mute">New season</p>
+		<p class="mt-1 text-[15px] font-medium tracking-tight">Quiet objects for the table</p>
+		<ul class="mt-4 grid grid-cols-2 gap-3">
+			{
+				products.map((product) => (
+					<li>
+						<div class:list={['flex aspect-[4/5] items-end justify-center rounded-lg p-3', product.tone]}>
+							<div class:list={['h-[58%] w-[42%] rounded-sm', product.mark]} />
+						</div>
+						<p class="mt-2 truncate font-medium">{product.name}</p>
+						<p class="text-mute">{product.price}</p>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</div>

@@ -1,0 +1,73 @@
+---
+const orders = [
+	{ id: '#1042', customer: 'Maya Chen', total: '$214.00', status: 'Paid', tone: 'text-emerald-700 bg-emerald-50' },
+	{ id: '#1041', customer: 'Jonas Berg', total: '$89.00', status: 'Fulfilled', tone: 'text-ink bg-soft' },
+	{ id: '#1040', customer: 'Amina Diallo', total: '$164.00', status: 'Pending', tone: 'text-amber-800 bg-amber-50' },
+	{ id: '#1039', customer: 'Eli Park', total: '$48.00', status: 'Paid', tone: 'text-emerald-700 bg-emerald-50' },
+];
+---
+
+<div class="flex min-h-[22rem] text-[12px] leading-snug text-ink">
+	<aside class="hidden w-36 shrink-0 border-r border-hairline bg-soft/80 p-3 sm:block">
+		<p class="px-2 text-[11px] font-medium tracking-tight">Cove Admin</p>
+		<ul class="mt-4 space-y-0.5 text-mute">
+			<li class="rounded-md px-2 py-1">Dashboard</li>
+			<li class="rounded-md bg-canvas px-2 py-1 font-medium text-ink">Orders</li>
+			<li class="rounded-md px-2 py-1">Products</li>
+			<li class="rounded-md px-2 py-1">Customers</li>
+			<li class="rounded-md px-2 py-1">Themes</li>
+			<li class="rounded-md px-2 py-1">Settings</li>
+		</ul>
+	</aside>
+	<div class="min-w-0 flex-1 p-4">
+		<div class="flex items-start justify-between gap-3">
+			<div>
+				<h3 class="text-[15px] font-medium tracking-tight">Orders</h3>
+				<p class="mt-0.5 text-mute">Today’s queue, one list.</p>
+			</div>
+			<span class="rounded-md bg-accent px-2.5 py-1 text-[11px] font-medium text-white">New order</span>
+		</div>
+		<div class="mt-4 grid grid-cols-3 gap-2">
+			<div class="rounded-lg border border-hairline px-2.5 py-2">
+				<p class="text-[10px] text-mute">Revenue</p>
+				<p class="mt-0.5 font-medium tabular-nums">$12,480</p>
+			</div>
+			<div class="rounded-lg border border-hairline px-2.5 py-2">
+				<p class="text-[10px] text-mute">Paid</p>
+				<p class="mt-0.5 font-medium tabular-nums">18</p>
+			</div>
+			<div class="rounded-lg border border-hairline px-2.5 py-2">
+				<p class="text-[10px] text-mute">AOV</p>
+				<p class="mt-0.5 font-medium tabular-nums">$86</p>
+			</div>
+		</div>
+		<div class="mt-3 overflow-hidden rounded-lg border border-hairline">
+			<table class="w-full text-left">
+				<thead class="border-b border-hairline bg-soft text-[10px] uppercase tracking-wide text-mute">
+					<tr>
+						<th class="px-2.5 py-1.5 font-medium">Order</th>
+						<th class="px-2.5 py-1.5 font-medium">Customer</th>
+						<th class="hidden px-2.5 py-1.5 font-medium sm:table-cell">Total</th>
+						<th class="px-2.5 py-1.5 font-medium">Status</th>
+					</tr>
+				</thead>
+				<tbody>
+					{
+						orders.map((order) => (
+							<tr class="border-b border-hairline last:border-0">
+								<td class="px-2.5 py-2 font-mono text-[11px]">{order.id}</td>
+								<td class="truncate px-2.5 py-2">{order.customer}</td>
+								<td class="hidden px-2.5 py-2 tabular-nums sm:table-cell">{order.total}</td>
+								<td class="px-2.5 py-2">
+									<span class:list={['rounded-md px-1.5 py-0.5 text-[10px] font-medium', order.tone]}>
+										{order.status}
+									</span>
+								</td>
+							</tr>
+						))
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
