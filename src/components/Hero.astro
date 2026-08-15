@@ -24,29 +24,27 @@ const installHtml = `<span class="text-accent">$</span> npm i -g @bermooda/cli@l
 			Open-source ecommerce as one deployable app, with a themed storefront, merchant admin, and REST API.
 		</p>
 
-		<div class="relative mt-8">
-			<div
-				class="hero-grid pointer-events-none absolute inset-x-[calc(50%-50vw)] bottom-full h-36 w-screen overflow-hidden sm:h-44"
-				aria-hidden="true"
+		<div
+			class="hero-grid pointer-events-none relative left-1/2 mt-2 h-32 w-screen -translate-x-1/2 overflow-hidden sm:h-40 lg:h-48"
+			aria-hidden="true"
+		>
+			<svg
+				class="absolute top-1/2 left-1/2 size-[1800px] -translate-x-1/2 -translate-y-1/2 rotate-45 text-black/10"
+				width="100%"
+				height="100%"
 			>
-				<svg
-					class="absolute top-1/2 left-1/2 size-[1800px] -translate-x-1/2 -translate-y-1/2 rotate-45 text-black/10"
-					width="100%"
-					height="100%"
-				>
-					<defs>
-						<pattern id="hero-diamond-grid" x="-1" y="-1" width="40" height="40" patternUnits="userSpaceOnUse">
-							<path d="M 40 0 L 0 0 0 40" fill="transparent" stroke="currentColor" stroke-width="1"></path>
-						</pattern>
-					</defs>
-					<rect fill="url(#hero-diamond-grid)" width="100%" height="100%"></rect>
-				</svg>
-			</div>
+				<defs>
+					<pattern id="hero-diamond-grid" x="-1" y="-1" width="40" height="40" patternUnits="userSpaceOnUse">
+						<path d="M 40 0 L 0 0 0 40" fill="transparent" stroke="currentColor" stroke-width="1"></path>
+					</pattern>
+				</defs>
+				<rect fill="url(#hero-diamond-grid)" width="100%" height="100%"></rect>
+			</svg>
+		</div>
 
-			<div class="animate-fade-up animation-delay-400 relative z-10 flex flex-wrap items-center justify-center gap-3">
-				<a href="#get-started" class="btn btn-primary"> Get Started </a>
-				<a href={GITHUB_URL} class="btn btn-secondary" target="_blank" rel="noopener noreferrer"> GitHub </a>
-			</div>
+		<div class="animate-fade-up animation-delay-400 relative z-10 flex flex-wrap items-center justify-center gap-3">
+			<a href="#get-started" class="btn btn-primary"> Get Started </a>
+			<a href={GITHUB_URL} class="btn btn-secondary" target="_blank" rel="noopener noreferrer"> GitHub </a>
 		</div>
 
 		<div class="animate-fade-up animation-delay-400 relative mx-auto mt-16 w-full min-w-0 max-w-5xl">
