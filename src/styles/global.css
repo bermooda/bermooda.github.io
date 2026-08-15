@@ -78,7 +78,7 @@
 	}
 
 	.hero-grid {
-		mask-image: radial-gradient(ellipse 70% 90% at 50% 50%, black 10%, transparent 75%);
+		mask-image: radial-gradient(ellipse at top, black 30%, transparent 75%);
 		animation: fade-in 1s ease-out both;
 		animation-delay: 800ms;
 	}
