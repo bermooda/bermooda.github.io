@@ -1,0 +1,179 @@
+---
+title: Storefront API
+description: Public catalog, category, search, review, cart, and checkout endpoints under /api/v1.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="No API key">
+Storefront routes under `/api/v1` are public. Carts are gated by the token returned at create — not by an Admin `berm_` key. See [Authentication](/docs/api/authentication/).
+</Aside>
+
+Base URL: `/api/v1`. Use these endpoints to list published products, search, collect reviews, manage a cart, and start checkout.
+
+## Catalog
+
+### List published products
+
+`GET /api/v1/catalog`
+
+**Query params:** `page`, `limit` (max 100), `locale`, `currency`, `categoryId`
+
+**Response:**
+
+```json
+{
+  "products": [...],
+  "total": 42,
+  "page": 1,
+  "limit": 20
+}
+```
+
+### Get a product
+
+`GET /api/v1/catalog/:id`
+
+Get a single product by id.
+
+**Query params:** `locale`, `currency`
+
+## Categories
+
+### List categories
+
+`GET /api/v1/categories`
+
+List all categories.
+
+**Query params:** `locale`
+
+## Search
+
+### Search products
+
+`GET /api/v1/search`
+
+**Query params:** `q`, `page`, `limit`, `locale`, `currency`, `categoryId`, `sortBy`, `sortDir`
+
+## Reviews
+
+### List approved reviews
+
+`GET /api/v1/products/:productId/reviews`
+
+List approved reviews for a product.
+
+**Query params:** `page` (default 1), `limit` (default 10, max 100)
+
+**Response:**
+
+```json
+{
+  "reviews": [...],
+  "total": 12,
+  "page": 1,
+  "limit": 10,
+  "totalPages": 2
+}
+```
+
+### Submit a review
+
+`POST /api/v1/products/:productId/reviews`
+
+Submit a product review (status starts as `pending` until moderated).
+
+**Body:** `{ "customerId": "...", "rating": 5, "title": "Optional", "body": "Great product" }`
+
+**Response:** `201` with `{ "review": { ... } }`
+
+## Cart
+
+### Create a cart
+
+`POST /api/v1/cart`
+
+**Body:**
+
+```json
+{ "currency": "USD", "customerId": "optional" }
+```
+
+**Response:** `201` with `{ "cart": { ... } }`
+
+The returned cart includes a token. Use that token on every later cart request.
+
+### Get a cart
+
+`GET /api/v1/cart/:token`
+
+Get a cart by its token.
+
+### Delete a cart
+
+`DELETE /api/v1/cart/:token`
+
+Delete a cart.
+
+### Add a line
+
+`POST /api/v1/cart/:token/lines`
+
+**Body:**
+
+```json
+{ "variantId": "cld...", "quantity": 2, "currency": "USD" }
+```
+
+### Update a line
+
+`PATCH /api/v1/cart/:token/lines/:lineId`
+
+Update a line's quantity.
+
+**Body:** `{ "quantity": 3 }` — set to `0` or negative to remove.
+
+### Remove a line
+
+`DELETE /api/v1/cart/:token/lines/:lineId`
+
+Remove a line from the cart.
+
+## Checkout
+
+### Create a checkout session
+
+`POST /api/v1/checkout`
+
+Create a checkout session from a cart.
+
+**Body:**
+
+```json
+{
+  "cartToken": "uuid...",
+  "email": "guest@example.com",
+  "customerId": "optional"
+}
+```
+
+**Response:** `201` with `{ "session": { ... } }`
+
+### Get a checkout session
+
+`GET /api/v1/checkout/:id`
+
+Get a checkout session.
+
+### Update a checkout session
+
+`POST /api/v1/checkout/:id/update`
+
+Update checkout session fields (address, shipping option, payment provider, tenders, etc.). Pass a full payload with `shippingAddressJson`, `shippingOptionJson`, and `paymentProvider` to validate a complete checkout before order placement.
+
+## Related
+
+- [REST API overview](/docs/api/)
+- [Authentication](/docs/api/authentication/)
+- [Admin](/docs/api/admin/)

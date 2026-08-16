@@ -1,0 +1,805 @@
+---
+title: Admin API
+description: Keyed Admin REST resources for settings, catalog, orders, customers, marketing, reports, and more.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="Bearer key required">
+Authenticated endpoints require `Authorization: Bearer berm_<key>` with `admin` scope (or a matching granular scope). Setup routes are listed under [Authentication](/docs/api/authentication/).
+</Aside>
+
+Base URL: `/api/admin/v1`. These routes share domain logic with the Admin UI and are intended for agents, CI, and your own tools. See [agents (MCP)](/docs/guides/agents/) if you are wiring an assistant.
+
+## Shop settings
+
+### Get settings
+
+`GET /api/admin/v1/settings`
+
+Shop settings snapshot: general, currencies, locales, tax, shipping zones, SEO, address validation.
+
+### Update one settings section
+
+`PATCH /api/admin/v1/settings`
+
+Update **one section per request**.
+
+**Body examples:**
+
+```json
+{ "general": { "shopName": "Acme", "contactEmail": "hello@acme.test" } }
+```
+
+```json
+{ "currencies": { "defaultCurrency": "USD", "currencies": ["USD", "EUR"] } }
+```
+
+```json
+{ "locales": { "defaultLocale": "en", "locales": ["en", "de"] } }
+```
+
+```json
+{ "tax": { "mode": "exclusive", "regions": [] } }
+```
+
+```json
+{ "shipping": { "zones": [] } }
+```
+
+```json
+{ "seo": { "metaTitle": "Acme Shop" } }
+```
+
+```json
+{ "addressValidation": { "provider": "noop" } }
+```
+
+Theme activation and plugin enablement use dedicated `/themes` and `/plugins` routes (not settings PATCH).
+
+## Themes
+
+### List themes
+
+`GET /api/admin/v1/themes`
+
+List registered themes, active theme id/manifest, and active theme settings values.
+
+### Activate a theme or save settings
+
+`PATCH /api/admin/v1/themes`
+
+Activate a theme and/or save settings for the active theme.
+
+```json
+{ "themeId": "@bermooda/theme-default" }
+```
+
+```json
+{ "settings": { "someKey": "value" } }
+```
+
+## Plugins
+
+### List plugins
+
+`GET /api/admin/v1/plugins`
+
+List registered plugins, enabled ids, display order, and per-plugin settings.
+
+### Enable, reorder, or configure plugins
+
+`PATCH /api/admin/v1/plugins`
+
+Enable/disable, reorder, and/or save settings.
+
+```json
+{ "pluginId": "@bermooda/plugin-meilisearch", "enabled": true }
+```
+
+```json
+{ "order": ["@bermooda/plugin-meilisearch"] }
+```
+
+```json
+{ "pluginId": "@bermooda/plugin-meilisearch", "settings": { "apiKey": "..." } }
+```
+
+## Categories
+
+### List the category tree
+
+`GET /api/admin/v1/categories`
+
+List category tree. Query: `locale`.
+
+### Create a category
+
+`POST /api/admin/v1/categories`
+
+**Body:** `{ "title": "Shirts", "slug": "shirts", "locale": "en", "parentId": null, "position": 0 }` — `name` is accepted as an alias for `title`.
+
+### Get a category
+
+`GET /api/admin/v1/categories/:id`
+
+Get a category (with children/products). Query: `locale`.
+
+### Update a category
+
+`PATCH /api/admin/v1/categories/:id`
+
+Update title/slug/parent/position.
+
+### Delete a category
+
+`DELETE /api/admin/v1/categories/:id`
+
+Recursively delete a category and its descendants.
+
+## Products
+
+### List products
+
+`GET /api/admin/v1/products`
+
+List products (all — including unpublished).
+
+**Query params:** `page`, `limit`, `locale`, `currency`, `categoryId`, `published`
+
+### Create a product
+
+`POST /api/admin/v1/products`
+
+Create a product. The accepted shape matches the catalog core used by Admin (`app/core/catalog/index.server.js`).
+
+### Get a product
+
+`GET /api/admin/v1/products/:id`
+
+Get a product by id.
+
+### Update a product
+
+`PATCH /api/admin/v1/products/:id`
+
+Update a product.
+
+### Delete a product
+
+`DELETE /api/admin/v1/products/:id`
+
+Delete a product.
+
+## Collections
+
+### List collections
+
+`GET /api/admin/v1/collections`
+
+Query: `page`, `limit`, `q`, `published`.
+
+### Create a collection
+
+`POST /api/admin/v1/collections`
+
+### Get a collection
+
+`GET /api/admin/v1/collections/:id`
+
+### Update a collection
+
+`PATCH /api/admin/v1/collections/:id`
+
+### Delete a collection
+
+`DELETE /api/admin/v1/collections/:id`
+
+## Imports
+
+### Import products from CSV
+
+`POST /api/admin/v1/imports`
+
+Import products from CSV (multipart or JSON payload — see the route module). Requires `imports:write` (or `admin`).
+
+## Inventory
+
+### List locations
+
+`GET /api/admin/v1/inventory/locations`
+
+List locations with inventory levels.
+
+### Create a location
+
+`POST /api/admin/v1/inventory/locations`
+
+Body: `{ "name": "Warehouse", "code": "WH1", "allowsPickup": false }`.
+
+### Set stock for a variant
+
+`PUT /api/admin/v1/inventory/levels`
+
+Set stock for a variant at a location. Requires `inventory:write` (or `admin`).
+
+**Body:** `{ "variantId": "…", "locationId": "…", "quantity": 10 }`
+
+## Orders and returns
+
+### List orders
+
+`GET /api/admin/v1/orders`
+
+**Query params:** `page`, `limit`, `status`, `customerId`
+
+### Get an order
+
+`GET /api/admin/v1/orders/:id`
+
+Get a single order with lines, shipments, and refunds.
+
+### Update order status
+
+`PATCH /api/admin/v1/orders/:id`
+
+**Body:** `{ "status": "confirmed" }`
+
+Valid statuses: `pending`, `confirmed`, `paid`, `fulfilled`, `cancelled`, `refunded`.
+
+### Create a refund
+
+`POST /api/admin/v1/orders/:id/refunds`
+
+**Body:** `{ "amountCents": 1000, "reason": "Customer request", "providerRefundId": "optional" }`
+
+### Create a shipment
+
+`POST /api/admin/v1/orders/:id/shipments`
+
+**Body:** `{ "carrier": "FedEx", "trackingNumber": "...", "trackingUrl": "..." }`
+
+### Create a return
+
+`POST /api/admin/v1/orders/:id/returns`
+
+Create a return request for an order.
+
+**Body:** `{ "reason": "Damaged item", "lines": [{ "orderLineId": "...", "quantity": 1 }] }`
+
+### List returns
+
+`GET /api/admin/v1/returns`
+
+List returns with pagination. Also returns `returnStatuses` and `returnResolutions`.
+
+**Query params:** `page`, `limit`, `status`, `orderId`, `customerId`
+
+### Get a return
+
+`GET /api/admin/v1/returns/:id`
+
+Get a single return with lines and order summary.
+
+### Approve a return
+
+`POST /api/admin/v1/returns/:id/approve`
+
+Approve a requested return.
+
+**Body:** `{ "resolution": "refund" }` — optional; defaults to `refund`.
+
+### Receive a return
+
+`POST /api/admin/v1/returns/:id/receive`
+
+Mark an approved return as received and restock inventory.
+
+### Complete a return
+
+`POST /api/admin/v1/returns/:id/complete`
+
+Complete a received return with refund, store credit, or exchange.
+
+**Body:** `{ "resolution": "refund", "refundAmountCents": 1000 }` — `refundAmountCents` is optional; defaults to line totals.
+
+### Cancel a return
+
+`POST /api/admin/v1/returns/:id/cancel`
+
+Cancel a return before it is received.
+
+## Reviews
+
+### List reviews
+
+`GET /api/admin/v1/reviews`
+
+List reviews with pagination. Also returns `reviewStatuses`.
+
+**Query params:** `page`, `limit`, `status` (`pending`, `approved`, `rejected`, or `all`), `productId`, `customerId`
+
+### Get a review
+
+`GET /api/admin/v1/reviews/:id`
+
+Get a single review with product title and customer summary.
+
+### Moderate a review
+
+`PATCH /api/admin/v1/reviews/:id`
+
+**Body:** `{ "status": "approved" }` — one of `pending`, `approved`, or `rejected`.
+
+### Delete a review
+
+`DELETE /api/admin/v1/reviews/:id`
+
+Delete a review permanently.
+
+## Customers
+
+### List customers
+
+`GET /api/admin/v1/customers`
+
+**Query params:** `page`, `limit`
+
+### Get a customer
+
+`GET /api/admin/v1/customers/:id`
+
+Get a customer with addresses.
+
+### Update a customer
+
+`PATCH /api/admin/v1/customers/:id`
+
+**Body:** `{ "name": "Jane Doe", "phone": "+1555...", "preferredLocale": "en" }`
+
+### Get consent
+
+`GET /api/admin/v1/customers/:id/consent`
+
+Get parsed consent flags and erasure state for a customer.
+
+### Update consent
+
+`PATCH /api/admin/v1/customers/:id/consent`
+
+Update stored consent preferences.
+
+**Body:** `{ "analytics": true, "marketing": false }` — include only fields to change.
+
+### Export personal data
+
+`GET /api/admin/v1/customers/:id/data-export`
+
+Export all personal data for a customer as a portable JSON bundle.
+
+### Erase a customer
+
+`POST /api/admin/v1/customers/:id/erase`
+
+Anonymize a customer's personal data while preserving order history. Returns `{ customerId, anonymizedEmail }`. Responds with `409` when the customer was already erased.
+
+## Admin users
+
+### List admin users
+
+`GET /api/admin/v1/admin-users`
+
+List admin and staff users.
+
+### Get an admin user
+
+`GET /api/admin/v1/admin-users/:id`
+
+Get an admin/staff user.
+
+### Update an admin user's role
+
+`PATCH /api/admin/v1/admin-users/:id`
+
+**Body:** `{ "role": "admin" }` or `{ "role": "staff" }`
+
+## Audit log
+
+Successful Admin API mutations (non-GET) are recorded with `actorType: api_key` (API key id / label). Admin UI mutations use `actorType: admin`. Domain events use `actorType: system`.
+
+### List audit log entries
+
+`GET /api/admin/v1/audit-logs`
+
+List audit log entries with pagination. Also returns `supportedEvents` (domain events recorded by the system subscriber).
+
+**Query params:** `page` (default 1), `limit` (default 50, max 100), `action`, `entityType`, `actorId`
+
+### Get an audit log entry
+
+`GET /api/admin/v1/audit-logs/:id`
+
+Get a single audit log entry.
+
+## Media
+
+### Upload a file
+
+`POST /api/admin/v1/media`
+
+Upload a file (`multipart/form-data`, field `file`). Requires `media:write` (or `admin`). Returns `{ media }` (201).
+
+### Get media metadata
+
+`GET /api/admin/v1/media/:id`
+
+Get media metadata. Requires `media:read` (or `admin`).
+
+## Discounts
+
+### List discounts
+
+`GET /api/admin/v1/discounts`
+
+**Query params:** `page`, `limit`, `active`
+
+### Create a discount
+
+`POST /api/admin/v1/discounts`
+
+### Get a discount
+
+`GET /api/admin/v1/discounts/:id`
+
+### Update a discount
+
+`PATCH /api/admin/v1/discounts/:id`
+
+### Delete a discount
+
+`DELETE /api/admin/v1/discounts/:id`
+
+## API keys
+
+### List API keys
+
+`GET /api/admin/v1/api-keys`
+
+List all API keys (key hashes are never returned). Query: `page`, `limit`.
+
+### Create an API key
+
+`POST /api/admin/v1/api-keys`
+
+Create an API key. The raw `key` is returned **once**.
+
+**Body:** `{ "label": "CI", "scopes": ["admin"], "expiresAt": null }`
+
+### Get API key metadata
+
+`GET /api/admin/v1/api-keys/:id`
+
+Get an API key metadata record.
+
+### Revoke an API key
+
+`DELETE /api/admin/v1/api-keys/:id`
+
+Revoke (permanently delete) an API key.
+
+For the **first** key with no existing credentials, use CLI seed/bootstrap or `POST /api/admin/v1/setup/api-key`. See [Authentication](/docs/api/authentication/).
+
+## Webhook subscriptions
+
+Manage outbound webhook subscriptions here. Delivery format, signatures, retries, and the event list are documented on [Webhooks](/docs/api/webhooks/).
+
+### List subscriptions
+
+`GET /api/admin/v1/webhook-subscriptions`
+
+List webhook subscriptions with pagination. Also returns `supportedEvents`.
+
+Query params: `page` (default 1), `limit` (default 50, max 100).
+
+### Create a subscription
+
+`POST /api/admin/v1/webhook-subscriptions`
+
+**Body:**
+
+```json
+{
+  "url": "https://example.com/webhook",
+  "events": ["order.created", "payment.refunded"],
+  "secret": "whsec_your_secret_here",
+  "label": "My ERP"
+}
+```
+
+Use `"*"` in the `events` array to receive all domain events.
+
+### Get a subscription
+
+`GET /api/admin/v1/webhook-subscriptions/:id`
+
+Get a subscription plus its recent delivery history.
+
+### Update a subscription
+
+`PATCH /api/admin/v1/webhook-subscriptions/:id`
+
+Update a subscription. Supported fields: `active`, `label`, `url`, `events`, `secret`.
+
+### Delete a subscription
+
+`DELETE /api/admin/v1/webhook-subscriptions/:id`
+
+Delete a webhook subscription and all its delivery records.
+
+## Marketing
+
+### List segments
+
+`GET /api/admin/v1/marketing/segments`
+
+List marketing segments with pagination.
+
+Query params: `page` (default 1), `limit` (default 50, max 100).
+
+### Create a segment
+
+`POST /api/admin/v1/marketing/segments`
+
+```json
+{
+  "name": "VIP customers",
+  "rules": {
+    "minOrders": 3,
+    "minSpentCents": 10000,
+    "customerGroupId": "..."
+  }
+}
+```
+
+### Get a segment
+
+`GET /api/admin/v1/marketing/segments/:id`
+
+Get a segment by id (includes parsed `rules`).
+
+### Update a segment
+
+`PATCH /api/admin/v1/marketing/segments/:id`
+
+Update a segment name and/or rules.
+
+### Delete a segment
+
+`DELETE /api/admin/v1/marketing/segments/:id`
+
+Delete a segment and its campaigns.
+
+### List campaigns
+
+`GET /api/admin/v1/marketing/campaigns`
+
+List email campaigns with pagination.
+
+### Create a campaign
+
+`POST /api/admin/v1/marketing/campaigns`
+
+Create a campaign for a segment.
+
+```json
+{
+  "segmentId": "...",
+  "name": "Summer sale",
+  "subject": "Don't miss out",
+  "bodyHtml": "<p>Hi {{name}}, ...</p>"
+}
+```
+
+### Get a campaign
+
+`GET /api/admin/v1/marketing/campaigns/:id`
+
+Get a campaign by id.
+
+### Send a campaign
+
+`POST /api/admin/v1/marketing/campaigns/:id/send`
+
+Send a draft or scheduled campaign to matching segment customers with marketing consent.
+
+### List abandoned-cart sequence steps
+
+`GET /api/admin/v1/marketing/abandoned-cart-sequences`
+
+List abandoned-cart sequence steps with pagination.
+
+### Create a sequence step
+
+`POST /api/admin/v1/marketing/abandoned-cart-sequences`
+
+```json
+{
+  "name": "First reminder",
+  "stepNumber": 1,
+  "delayMinutes": 60,
+  "subject": "You left items in your cart"
+}
+```
+
+### Get a sequence step
+
+`GET /api/admin/v1/marketing/abandoned-cart-sequences/:id`
+
+Get a sequence step by id.
+
+### Update a sequence step
+
+`PATCH /api/admin/v1/marketing/abandoned-cart-sequences/:id`
+
+Update a sequence step (including `active` toggle).
+
+### Run abandoned-cart sequences
+
+`POST /api/admin/v1/marketing/abandoned-cart-sequences/run`
+
+Queue abandoned-cart sequence processing. Returns `{ queued: true }` with status 202.
+
+## Reports
+
+Shared query params (where relevant): `startDate`, `endDate` (ISO date `YYYY-MM-DD`), `limit` (default 20, max 100), `locale` (default shop locale).
+
+Paid sales metrics use order statuses `paid`, `fulfilled`, and `refunded`.
+
+### Overview KPIs
+
+`GET /api/admin/v1/reports/overview`
+
+Overview KPIs for the range: revenue, paid/total orders, tax, discounts, refunds, AOV, checkout conversion.
+
+**Response:** `{ "overview": { ... } }`
+
+### Sales over time
+
+`GET /api/admin/v1/reports/sales-over-time`
+
+Daily buckets: orders, revenue, tax, discounts.
+
+**Response:** `{ "salesOverTime": [ ... ] }`
+
+### Sales by product
+
+`GET /api/admin/v1/reports/sales-by-product`
+
+Top products by revenue (`limit`).
+
+**Response:** `{ "salesByProduct": [ ... ] }`
+
+### Sales by category
+
+`GET /api/admin/v1/reports/sales-by-category`
+
+Revenue by category (`limit`, titles honor `locale`).
+
+**Response:** `{ "salesByCategory": [ ... ] }`
+
+### Operations
+
+`GET /api/admin/v1/reports/ops`
+
+Operational metrics: abandoned checkouts and recent orders (date-ranged); low stock count + sample variants (current snapshot).
+
+**Response:** `{ "ops": { "range", "asOf", "abandonedCheckouts", "recentOrders", "lowStock" } }`
+
+### Customers
+
+`GET /api/admin/v1/reports/customers`
+
+Customer analytics for the range: new customers, returning customers, paid orders split new vs returning, top customers by revenue.
+
+Guest orders (no `customerId`) are excluded from order-based metrics.
+
+**Response:** `{ "customers": { ... } }`
+
+### Inventory
+
+`GET /api/admin/v1/reports/inventory`
+
+Snapshot inventory analytics: low stock, out of stock, stock value, by location.
+
+Optional query: `currency` (default shop default), `threshold` (default 5). Date params are ignored.
+
+**Response:** `{ "inventory": { ... } }`
+
+### Scheduled export health
+
+`GET /api/admin/v1/reports/exports`
+
+Scheduled export health: schedule counts, recent runs (no CSV body), failure rate in range.
+
+**Response:** `{ "exports": { ... } }`
+
+### Dashboard
+
+`GET /api/admin/v1/reports/dashboard`
+
+Composed payload: overview, salesOverTime, salesByProduct, salesByCategory, and ops.
+
+**Response:** `{ "report": { ... } }`
+
+## Scheduled exports
+
+### List scheduled exports
+
+`GET /api/admin/v1/scheduled-exports`
+
+List scheduled CSV exports with pagination. Also returns `exportTypes` and `exportSchedules`.
+
+Query params: `page` (default 1), `limit` (default 50, max 100).
+
+### Create a scheduled export
+
+`POST /api/admin/v1/scheduled-exports`
+
+**Body:**
+
+```json
+{
+  "label": "Weekly orders",
+  "exportType": "orders",
+  "schedule": "weekly",
+  "recipientEmail": "ops@example.com",
+  "filters": { "startDate": "2026-01-01", "endDate": "2026-01-31" }
+}
+```
+
+### Get a scheduled export
+
+`GET /api/admin/v1/scheduled-exports/:id`
+
+Get a scheduled export plus its recent runs.
+
+### Delete a scheduled export
+
+`DELETE /api/admin/v1/scheduled-exports/:id`
+
+Delete a scheduled export.
+
+### Run a scheduled export now
+
+`POST /api/admin/v1/scheduled-exports/:id/run`
+
+Queue an immediate run of a scheduled export.
+
+### Get an export run
+
+`GET /api/admin/v1/export-runs/:id`
+
+Get export run metadata. Pass `includeContent=true` to include the CSV payload.
+
+## Other resources
+
+Also registered (see route modules under `app/routes/api/admin/v1/`):
+
+| Resource | Notes |
+| -------- | ----- |
+| `pages`, `menus` | CMS content |
+| `channels`, `companies`, `quotes` | Channels / B2B |
+| `gift-cards`, `loyalty`, `wishlists` | Engagement |
+| `pos`, `subscriptions` (+ plans) | POS / subscriptions |
+| `storage` | Storage provider status |
+| `media`, `media/:id` | Upload + get media metadata |
+| `address-validation/*` | Providers + validate |
+| `back-in-stock-subscriptions` | Waitlist management |
+| Order/shipment PDF documents | Invoice + packing slip |
+
+## Related
+
+- [REST API overview](/docs/api/)
+- [Authentication](/docs/api/authentication/)
+- [Webhooks](/docs/api/webhooks/)
+- [Agents (MCP)](/docs/guides/agents/)

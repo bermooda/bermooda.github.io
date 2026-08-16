@@ -1,0 +1,93 @@
+---
+title: Authentication
+description: Storefront endpoints are public; Admin API keys use Bearer berm_ credentials, scopes, and optional setup routes.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="Admin routes need a key">
+Most `/api/admin/v1/*` endpoints require an Admin API key in the `Authorization` header. Setup routes under `/api/admin/v1/setup*` are the exception: they are rate-limited but not API-key authenticated.
+</Aside>
+
+How you authenticate depends on which API you call. Storefront traffic is public. Admin traffic uses `berm_` keys. For cookie-based Admin UI login, see the [authentication guide](/docs/guides/auth/). For agent-oriented setup, see [agents (MCP)](/docs/guides/agents/).
+
+## Storefront
+
+Storefront catalog, search, cart, and checkout endpoints are **public** — no API key is required.
+
+Cart access is controlled by the **cart token**, a UUID returned when the cart is created. Pass that token in later cart URLs (`/api/v1/cart/:token` and nested line routes). Anyone who has the token can read or change that cart.
+
+## Admin API keys
+
+Send the key as a Bearer token:
+
+```
+Authorization: Bearer berm_<your_key>
+```
+
+Keys may call `/api/admin/v1` when they have `admin` or any granular admin-area scope. Individual routes may require a specific scope; `admin` always satisfies those checks.
+
+**Creating additional keys:** `POST /api/admin/v1/api-keys` (requires an existing admin key), or **Admin → API**.
+
+### First key (no existing credentials)
+
+Prefer **CLI seed / `npm run cli:bootstrap`**. That flow creates the first admin (if needed), marks setup complete, prints a one-time bootstrap `berm_` key, writes `.bermooda/bootstrap-api-key`, and may append `BERMOODA_API_KEY` to `.env`. Then run `bermooda mcp init` from [@bermooda/cli](https://github.com/bermooda/cli).
+
+You can also use the unauthenticated setup endpoints below with a one-shot `SETUP_TOKEN` (see `.env.example`).
+
+<Aside type="note" title="The raw key is shown once">
+Bootstrap and `POST /api/admin/v1/api-keys` return the raw `berm_` secret a single time. Store it immediately. Later list/get responses never include the key material — only hashes and metadata.
+</Aside>
+
+## Scopes
+
+| Scope | Access |
+| ----- | ------ |
+| `admin` | Full Admin API (recommended for agents / MCP). Implies all granular scopes below except `storefront`. |
+| `storefront` | Reserved for future storefront-scoped credentials |
+| `settings:read` / `settings:write` | Shop settings |
+| `products:read` / `products:write` | Catalog products |
+| `categories:read` / `categories:write` | Categories |
+| `orders:read` / `orders:write` | Orders |
+| `media:read` / `media:write` | Media metadata + upload |
+| `inventory:read` / `inventory:write` | Locations + inventory levels |
+| `webhooks:read` / `webhooks:write` | Webhook subscriptions |
+| `themes:write` / `plugins:write` | Theme activate / plugin enable |
+| `audit:read` | Audit log read |
+| `imports:write` | CSV imports |
+
+## Setup endpoints (no API key)
+
+These live under `/api/admin/v1/setup*` and are rate-limited but **not** API-key authenticated.
+
+### Readiness snapshot
+
+`GET /api/admin/v1/setup`
+
+Bootstrap readiness snapshot: `onboardingAvailable`, `adminExists`, `adminSetupComplete`, `apiKeyCount`, `bootstrapApiKeyAvailable`, `setupTokenConfigured`.
+
+### Create the first admin
+
+`POST /api/admin/v1/setup/admin`
+
+Create the first admin when onboarding is still available (same gate as the Admin UI).
+
+**Body:** `{ "name": "...", "email": "...", "password": "...", "confirmPassword": "..." }` — `confirmPassword` defaults to `password` when omitted.
+
+### Create the first API key
+
+`POST /api/admin/v1/setup/api-key`
+
+Create the **first** API key when none exist. Requires `SETUP_TOKEN` via `X-Setup-Token` or `Authorization: Bearer <SETUP_TOKEN>`.
+
+Returns `{ "key": "berm_...", "apiKey": { ... } }` once.
+
+When `SETUP_TOKEN` is unset, use CLI seed/bootstrap instead.
+
+## Related
+
+- [REST API overview](/docs/api/)
+- [Storefront](/docs/api/storefront/)
+- [Admin](/docs/api/admin/)
+- [Authentication guide](/docs/guides/auth/)
+- [Agents (MCP)](/docs/guides/agents/)

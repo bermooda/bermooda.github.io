@@ -1,0 +1,49 @@
+---
+title: REST API
+description: Public storefront API and keyed Admin API, with a consistent JSON error shape.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="Still in beta">
+The REST API is buildable now, but it is still in beta. Rate limiting, RBAC, and Postgres hardening are still evolving.
+</Aside>
+
+bermooda serves two REST surfaces on the same app: a public storefront API for catalog, cart, and checkout, and an Admin API for shop operations, agents, and your own tools.
+
+## Where to send requests
+
+| Audience   | Base URL        | Access |
+| ---------- | --------------- | ------ |
+| Storefront | `/api/v1`       | Public. No API key. Carts are gated by the token returned when the cart is created. |
+| Admin      | `/api/admin/v1` | Requires an Admin API key (`Authorization: Bearer berm_…`) except for setup routes. |
+
+Storefront catalog, search, cart, and checkout endpoints do not require a key. Most Admin routes do. See [Authentication](/docs/api/authentication/) for keys, scopes, and first-time bootstrap.
+
+A machine-readable [OpenAPI description](https://github.com/bermooda/bermooda/blob/master/docs/openapi.yaml) is published in the [bermooda/bermooda](https://github.com/bermooda/bermooda) repository.
+
+## Errors
+
+Every error response is JSON with a human-readable `error` string and a machine-readable `code`:
+
+```json
+{ "error": "Invalid API key", "code": "KEY_INVALID" }
+```
+
+| HTTP status | Meaning |
+| ----------- | ------- |
+| 400 | Bad request (missing or invalid body) |
+| 401 | Missing or invalid API key |
+| 403 | API key lacks the required scope |
+| 404 | Resource not found |
+| 405 | Method not allowed |
+| 422 | Business logic error (see `code`) |
+
+## Next steps
+
+- [Authentication](/docs/api/authentication/) — storefront cart tokens, Admin `berm_` keys, scopes, and setup endpoints
+- [Storefront](/docs/api/storefront/) — catalog, categories, search, reviews, cart, and checkout
+- [Admin](/docs/api/admin/) — settings, catalog, orders, customers, reports, and other keyed resources
+- [Webhooks](/docs/api/webhooks/) — payload shape, HMAC verification, retries, and events
+
+Related guides: [authentication](/docs/guides/auth/) and [agents (MCP)](/docs/guides/agents/).
