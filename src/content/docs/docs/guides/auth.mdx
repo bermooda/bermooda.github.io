@@ -1,0 +1,111 @@
+---
+title: Authentication
+description: Dual better-auth instances for admin staff and storefront customers, with isolated cookies and sessions.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+bermooda uses a **dual-auth** design: two [better-auth](https://www.better-auth.com/) instances, each with its own cookie namespace, base path, and Prisma model set. The two instances share no session state and no cookies.
+
+A browser can hold both an admin session and a customer session at the same time (for example a staff member with admin and storefront tabs open). Logging out of one does not touch the other.
+
+## Admin auth
+
+| Property | Value |
+| --- | --- |
+| File | `app/libs/auth/admin/index.server.js` |
+| Client | `app/libs/auth/admin-client.js` |
+| Base path | `/admin/auth` |
+| Cookie prefix | `bermooda_admin_` |
+| Prisma models | `User`, `Session`, `Account`, `Verification` |
+| Plugins | `twoFactor` |
+| Callback URL | `/admin/dashboard` |
+
+Handles staff logins against the standard better-auth models already in the Prisma schema.
+
+Admin `twoFactor` uses email OTP (`skipVerificationOnEnable: true`). New users default to `twoFactorEnabled: false`. Bootstrap and seed keep 2FA off until email is ready; new staff created after email is configured get 2FA on automatically. Existing users enable it from **Admin → Security**.
+
+Route handler: `GET/POST /admin/auth/*` → `app/routes/auth/admin/index.jsx`.
+
+## Customer auth
+
+| Property | Value |
+| --- | --- |
+| File | `app/libs/auth/customer/index.server.js` |
+| Client | `app/libs/auth/customer-client.js` |
+| Base path | `/account/auth` |
+| Cookie prefix | `bermooda_customer_` |
+| Prisma models | `Customer`, `CustomerSession`, `CustomerAccount`, `CustomerVerification` |
+| Plugins | none (two-factor deferred) |
+| Callback URL | `/account` |
+
+Handles storefront customer logins. Each better-auth table is remapped with `modelName` onto the `Customer*` Prisma models:
+
+```js
+user: { modelName: 'Customer' },
+session: { modelName: 'CustomerSession' },
+account: { modelName: 'CustomerAccount' },
+verification: { modelName: 'CustomerVerification' },
+```
+
+There is no `modelPrefix` shorthand on the Prisma adapter; remapping is per entity.
+
+Route handler: `GET/POST /account/auth/*` → `app/routes/auth/customer/index.jsx`.
+
+## Cookie isolation
+
+Each instance writes its own cookies. Names differ, so they never collide on the same host.
+
+| Cookie name | Set by | Path scope |
+| --- | --- | --- |
+| `bermooda_admin_session` | admin instance | `/admin/` |
+| `bermooda_customer_session` | customer instance | `/` (all storefront requests) |
+
+Admin cookies are scoped to `/admin/` because the admin base path is `/admin/auth`. Customer cookies are scoped to `/` so they are sent on `/account/` and the rest of the storefront.
+
+Each middleware only asks **its own** better-auth instance to validate, which only reads cookies for that prefix. Presenting a valid `bermooda_customer_session` to an admin-protected route returns no session (and the reverse).
+
+Isolation also holds at the database: admin operations target `User` / `Session` / `Account` / `Verification`; customer operations target the `Customer*` models. There is no foreign-key relationship between the two sets.
+
+## Protecting routes
+
+Follow the pattern in the nearest sibling route. You can use React Router middleware or loader-based session checks.
+
+### Middleware
+
+- **Admin** — `adminAuthMiddleware` from `admin.server.js`. Applies the `auth` rate limit, then verifies the session. On success it sets `adminAuthContext` so child routes can read the current admin via `context.get(adminAuthContext)`.
+- **Customer** — `customerAuthMiddleware` from `customer.server.js`. Same rate limit, then session check. Unauthenticated requests redirect to `/account/login`.
+
+Auth handlers also sit behind `rateLimitMiddleware('auth')` (20 requests/min per IP+path).
+
+### Loader-based (layout default)
+
+- **Admin** — call `authenticate(request)` from `admin.server.js` in `app/routes/admin/_layout.jsx` (or per-route loaders).
+- **Customer account** — call `getCustomerSession(request)` from `customer.server.js` in `app/routes/storefront/account/_layout.jsx`.
+
+## Client-side
+
+| Import | basePath | Plugins |
+| --- | --- | --- |
+| `adminAuthClient` | `/admin/auth` | `twoFactorClient` |
+| `customerAuthClient` | `/account/auth` | none |
+
+Both clients derive `baseURL` from `window.location.origin` in the browser and fall back to `config.baseUrl` on the server.
+
+## Smoke test
+
+Confirm both instances are mounted on separate base paths:
+
+```bash
+# Admin auth — JSON from better-auth (200, 401, or its own 404)
+curl -I http://localhost:3000/admin/auth/get-session
+
+# Customer auth — independent instance
+curl -I http://localhost:3000/account/auth/get-session
+```
+
+Both endpoints should be reachable. That confirms the two instances are independently mounted.
+
+<Aside type="note">
+Admin REST clients authenticate with `berm_` API keys, not these session cookies. See [API authentication](/docs/api/authentication/).
+</Aside>

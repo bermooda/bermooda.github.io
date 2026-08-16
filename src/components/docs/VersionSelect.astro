@@ -1,0 +1,30 @@
+---
+import Select from '@astrojs/starlight/components/Select.astro';
+
+const versions = [{ label: 'master', value: 'master', selected: true }];
+---
+
+<starlight-version-select>
+	<Select icon="github" label="Documentation version" options={versions} width="6.5em" />
+</starlight-version-select>
+
+<script>
+	class StarlightVersionSelect extends HTMLElement {
+		constructor() {
+			super();
+			this.querySelector('select')?.addEventListener('change', (event) => {
+				if (!(event.currentTarget instanceof HTMLSelectElement)) {
+					return;
+				}
+
+				if (event.currentTarget.value === 'master') {
+					return;
+				}
+			});
+		}
+	}
+
+	if (!customElements.get('starlight-version-select')) {
+		customElements.define('starlight-version-select', StarlightVersionSelect);
+	}
+</script>

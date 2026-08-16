@@ -1,0 +1,38 @@
+---
+title: Configuration
+description: Environment variables for the database, auth, Stripe, Google OAuth, and object storage.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Copy `.env.example` to `.env`, or run `npm run setup`, which creates `.env` when it is missing. Placeholder values are enough to boot the app. Wire real keys when you need payments, email, OAuth, or object storage.
+
+## Notable variables
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | SQLite (`file:./prisma/dev.db`) or PostgreSQL connection string |
+| `BETTER_AUTH_SECRET` | Auth secret; also encrypts plugin password settings at rest |
+| `STRIPE_PUBLIC_KEY` / `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | Payments |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Optional Google OAuth |
+| `STORAGE_ENDPOINT` / `STORAGE_REGION` / `STORAGE_BUCKET` / `STORAGE_ACCESS_KEY` / `STORAGE_SECRET_KEY` / `STORAGE_PUBLIC_URL` | S3-compatible object storage |
+
+`DATABASE_PROVIDER` is optional. When omitted, bermooda infers `sqlite` or `postgresql` from `DATABASE_URL`.
+
+<Aside type="note">
+Default email transport is SMTP via `bermooda.config.js`. Optional ESP plugins (Resend, SendGrid, AWS SES) are activated under **Admin → Plugins**. Install them with `bermooda plugin add` when you need them.
+</Aside>
+
+## Google OAuth (optional)
+
+1. Create a project in the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create OAuth client credentials (Web application).
+3. Add authorized redirect URIs:
+   - Development: `http://localhost:3000/auth/callback/google`
+   - Production: `https://your-domain/auth/callback/google`
+4. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`.
+
+## Related guides
+
+- [PostgreSQL](/docs/guides/postgres/) — production database, CI, and the single-shop model
+- [Storage](/docs/guides/storage/) — S3-compatible media, MinIO locally, and upload APIs

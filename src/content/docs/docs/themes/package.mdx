@@ -1,0 +1,128 @@
+---
+title: Theme package contract
+description: package.json identity, defineTheme runtime entry, imports, and folder layout for storefront themes.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Every theme ships a `package.json` for identity and display metadata. Runtime behavior — the component map — lives in `index.js` and is merged with that identity at discovery time.
+
+## package.json
+
+```json
+{
+  "name": "@bermooda/theme-default",
+  "version": "1.0.0",
+  "description": "The default bermooda storefront theme.",
+  "private": true,
+  "bermooda": {
+    "title": "Default",
+    "slug": "default",
+    "engine": ">=1.0.0",
+    "settings": [
+      { "key": "accentColor", "label": "Accent Color", "type": "text" }
+    ]
+  }
+}
+```
+
+### Field reference
+
+| Runtime field | Source | Required | Description |
+| --- | --- | --- | --- |
+| `id` | `name` | yes | Full package name, including scope. This is the registry and `activeTheme` id. |
+| `version` | `version` | yes | Theme version. Semver recommended. |
+| `description` | `description` | no | Short description shown in admin. |
+| `title` | `bermooda.title` | yes | Human-readable display title shown in admin. |
+| `slug` | `bermooda.slug` | yes | Lowercase hyphenated folder and i18n key. |
+| `engine` | `bermooda.engine` | yes | Semver range of compatible bermooda app versions (for example `>=1.0.0`). |
+| `settings` | `bermooda.settings` | no | Package-driven admin settings schema. |
+| `components` | `index.js` runtime | yes | Map of component names to React components. |
+
+Rules:
+
+- `id` is the full `package.json` `name`, such as `@bermooda/theme-default`.
+- `bermooda.slug` must match `^[a-z0-9]+(?:-[a-z0-9]+)*$`.
+- Bundled folders use `app/themes/<slug>/`. The folder name must equal `bermooda.slug`.
+- `activeTheme` stores the full package id, not the slug.
+- `bermooda.engine` is checked against the shop root `package.json` `version`. The CLI rejects install and update when incompatible; at runtime, discovery logs and soft-skips incompatible themes instead of failing startup.
+- Filesystem and i18n resolution use the slug, such as `app/themes/default/i18n/en.json`.
+
+## Runtime entry
+
+Register theme components from `index.js` with `defineTheme()`. Pass a `components` map only — do not pass identity fields. Those come from sibling `package.json`.
+
+```js
+import { defineTheme } from '#/core/themes/define';
+
+import CartPage from './components/cart-page';
+import CategoryPage from './components/category-page';
+import CheckoutLayout from './components/checkout-layout';
+import HomePage from './components/home-page';
+import Layout from './components/layout';
+import NotFoundPage from './components/not-found-page';
+import ProductPage from './components/product-page';
+
+export default defineTheme({
+  components: {
+    Layout,
+    HomePage,
+    ProductPage,
+    CategoryPage,
+    CartPage,
+    CheckoutLayout,
+    NotFoundPage,
+  },
+});
+```
+
+See [Components](/docs/themes/components/) for the full required and optional maps, and [Theme API](/docs/themes/api/) for what `defineTheme` validates.
+
+## Imports
+
+Inside a theme package (`app/themes/<slug>/`):
+
+- Import **sibling theme modules** with **relative** paths (for example `./components/home-page` or `../storefront-chrome`).
+- Import **core app modules** with the `#/…` alias (for example `#/core/themes/define`, `#/core`, `#/components/slot-blocks`).
+- Outside themes, the core app and routes continue to load themes via `#/themes/<slug>/…`.
+
+Oxlint enforces the sibling-import rule with `no-restricted-imports` on `app/themes/**`.
+
+<Aside type="caution" title="No #/themes imports inside a theme">
+Theme files must not import each other via `#/themes/…`. Use relative paths between sibling files. Keep `#/…` for core app modules.
+</Aside>
+
+## Folder layout
+
+```txt
+app/themes/
+  <slug>/
+    package.json        Identity — name/id, version, description, bermooda.title, bermooda.slug, settings.
+    index.js            Runtime entry. Calls defineTheme({ components }).
+    components/
+      layout.jsx
+      home-page.jsx
+      product-page.jsx
+      category-page.jsx
+      cart-page.jsx
+      checkout-layout.jsx
+      not-found-page.jsx
+    i18n/
+      en.json           Translation key/value pairs for this theme slug.
+```
+
+## Theme settings
+
+The optional `bermooda.settings` array lets a theme declare admin-configurable options. Each entry has:
+
+| Key | Type | Description |
+| --- | --- | --- |
+| `key` | `string` | Storage key. Prefixed `theme.<id>.<key>` in the settings table, where `id` is the full package name. |
+| `label` | `string` | Label shown in the admin form. |
+| `type` | `text`, `select`, or `toggle` | Input type rendered in the admin UI. |
+| `options` | `string[]` or `{ value, label }[]` | Choices for `select` type. |
+| `default` | `any` | Fallback value when nothing is saved. |
+
+Admin loads and saves values with `loadThemeSettings` / `saveThemeSettings` (and the Admin API equivalent). Storefront loaders receive the same values as `themeSettings` from `loadStorefrontPageContext(request)`. Pass `themeSettings` as props into theme page components when they need settings.
+
+See [Slots](/docs/themes/slots/#page-context) for how loaders resolve `themeId` and `themeSettings` together.

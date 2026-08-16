@@ -1,0 +1,407 @@
+---
+title: Plugin hooks and ctx
+description: definePlugin, defineHooks, lifecycle ctx, and the platform event catalog including before-hooks.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Plugins declare runtime behavior with `definePlugin()` and subscribe to platform events with `defineHooks()`. Lifecycle callbacks receive a `ctx` object. Event handlers do not — they receive only the payload.
+
+All of these functions are exported from `app/core/plugins/index.server.js`. Import them with the `#/core/plugins/index.server` alias.
+
+## definePlugin
+
+`definePlugin(runtime)` validates plugin runtime configuration and returns it unchanged. Identity comes from sibling `package.json`, so do not pass `id`, `title`, `name`, `version`, or `slug` here.
+
+```js
+import { definePlugin } from '#/core/plugins/index.server';
+
+export const pluginManifest = definePlugin({
+  providers: {
+    // provider specs
+  },
+});
+```
+
+Runtime fields you can pass:
+
+| Field | Description |
+| --- | --- |
+| `hooks` | Map of event name → handler, usually from `defineHooks()` |
+| `providers` | Map of provider key → spec from `defineProvider()` |
+| `blocks` | Map of slot name → React component. See [blocks](/docs/plugins/blocks/). |
+| `onEnable` | `async (ctx) => {}` — runs after hooks and providers are wired |
+| `onDisable` | `async (ctx) => {}` — runs before hooks and providers are removed |
+
+**Throws:** `Error` if runtime is not an object or if `providers` contains invalid provider specs.
+
+## defineHooks
+
+`defineHooks(hookMap)` validates that every value in the hook map is a function, then returns the map. Use this when declaring the runtime `hooks` field.
+
+```js
+import { defineHooks } from '#/core/plugins/index.server';
+
+const hooks = defineHooks({
+  'order.created': async (payload) => {
+    /* ... */
+  },
+  'customer.registered': async (payload) => {
+    /* ... */
+  },
+});
+```
+
+**Throws:** `Error` if any handler is not a function.
+
+<Aside type="caution" title="Handlers do not receive ctx">
+Hook handlers receive the event payload as their only argument. They do not receive `ctx`. If a handler needs Prisma, settings, or other services, import those modules at the top of the file. Prefer domain APIs in `app/core/*` over raw Prisma.
+</Aside>
+
+## defineProvider
+
+`defineProvider(type, spec)` creates a typed provider spec object. Returns `{ type, ...spec }`.
+
+```js
+import { defineProvider } from '#/core/plugins/index.server';
+
+const myPaymentProvider = defineProvider('payment', {
+  name: 'My Payment Gateway',
+  charge: async ({ amountCents, currency, token }) => {
+    /* ... */
+  },
+  refund: async ({ chargeId, amountCents }) => {
+    /* ... */
+  },
+});
+```
+
+`type` must be one of `'payment'`, `'shipping'`, `'tax'`, `'address_validation'`, `'email'`, or `'search'`. **Throws** if `type` is not one of those values, or if `spec` is not an object.
+
+For `payment`, `shipping`, `tax`, `address_validation`, and `email`, the `spec` object is the provider implementation registered into the matching registry.
+
+```js
+providers: {
+  my_gateway: defineProvider('payment', {
+    name: 'My Gateway',
+    createCheckoutSession: async ({ cart, successUrl, cancelUrl }) => {
+      /* ... */
+    },
+    verifyWebhook: async (request) => {
+      /* ... */
+    },
+    handleWebhookEvent: async (event) => {
+      /* ... */
+    },
+    createRefund: async ({ paymentIntentId, amountCents, reason }) => {
+      /* ... */
+    },
+  }),
+}
+```
+
+### Email providers
+
+The built-in default transport is Nodemailer (SMTP) via `email.smtp` in `bermooda.config.js` (Nodemailer defaults when omitted). Custom and ESP transports implement `send()` with `from`, `to`, `subject`, `html`, and optional `text`. First-party ESP plugins (`@bermooda/plugin-resend`, `@bermooda/plugin-sendgrid`, `@bermooda/plugin-aws-ses`) install under `app/plugins/resend/`, `app/plugins/sendgrid/`, and `app/plugins/aws-ses/`.
+
+Only one email-provider plugin can be active: enabling another under **Admin → Plugins → Email providers** automatically deactivates the previous one and replaces Nodemailer until the plugin is disabled.
+
+```js
+import { definePlugin, defineProvider } from '#/core/plugins/index.server';
+
+export const pluginManifest = definePlugin({
+  providers: {
+    postmark: defineProvider('email', {
+      name: 'Postmark',
+      async send({ from, to, subject, html, text }) {
+        // Call your ESP API with the already-rendered HTML.
+        return { success: true };
+      },
+    }),
+  },
+});
+```
+
+The email registry lives in `#/libs/email`. Nodemailer SMTP settings live in `bermooda.config.js`; ESP plugin credentials stay in plugin settings (or env where a plugin documents that).
+
+### Search providers
+
+For `search`, pass the search implementation as `spec.provider`. Set `isDefault: true` if the plugin should become the active default search provider while enabled:
+
+```js
+import { definePlugin, defineProvider } from '#/core/plugins/index.server';
+
+import { meilisearchProvider } from './provider/index.server';
+
+export const pluginManifest = definePlugin({
+  providers: {
+    meilisearch: defineProvider('search', {
+      provider: meilisearchProvider,
+      isDefault: true,
+    }),
+  },
+});
+```
+
+## defineProviders
+
+`defineProviders(providerMap)` validates a `providers` map and returns it unchanged. Each value must be a provider spec created with `defineProvider()`.
+
+```js
+import {
+  definePlugin,
+  defineProvider,
+  defineProviders,
+} from '#/core/plugins/index.server';
+
+export const pluginManifest = definePlugin({
+  providers: defineProviders({
+    my_gateway: defineProvider('payment', {
+      name: 'My Gateway',
+      createCheckoutSession: async () => {
+        /* ... */
+      },
+    }),
+  }),
+});
+```
+
+Use this when you want explicit validation of the entire provider map at declaration time. `definePlugin()` also validates the `providers` field when present.
+
+## Related registry helpers
+
+These are the functions that implement the [plugin lifecycle](/docs/plugins/#lifecycle). All take the full package id (for example `@bermooda/my-plugin`), not the slug.
+
+| Function | Role |
+| --- | --- |
+| `register(manifest)` | Add a merged manifest to the in-memory registry. Does not enable. |
+| `enable(pluginId)` | Wire hooks and providers, then call `onEnable(ctx)`. Idempotent if already enabled. Unwinds on failure. |
+| `disable(pluginId)` | Call `onDisable(ctx)`, unregister providers, remove hook handlers. |
+| `setPluginEnabledState(pluginId, enabled)` | Persist `enabledPlugins` and call `enable` / `disable`. Rolls back the Setting if live wiring fails. Busts the `i18n:` cache prefix. |
+| `listRegisteredPlugins()` | All registered manifests. |
+| `getRegisteredPlugin(pluginId)` | Manifest by id, or `null`. |
+| `getEnabledPluginIds()` / `isPluginEnabled(pluginId)` | Read helpers for persisted `enabledPlugins` (full package ids). |
+| `loadPluginSettings(manifest)` / `savePluginSettings(pluginId, manifest, formData)` | Package-driven settings stored under `plugin.<pluginId>.<key>`. |
+| `setPluginOrder(orderedIds)` | Persist display order. `orderedIds` must be a permutation of all registered plugin ids. |
+| `resolvePluginAdminRoute(pluginId, path)` | Admin route descriptor for a folder slug, splat relative to `/admin/plugins/<slug>/`. |
+| `resolvePluginStorefrontRoute(pluginId, path)` | Storefront route descriptor for a folder slug, splat relative to `/apps/<slug>/`. |
+
+Admin UI toggles should call `setPluginEnabledState` rather than `enable` / `disable` directly so the `enabledPlugins` setting stays in sync.
+
+## The ctx object
+
+`ctx` is passed to `onEnable` and `onDisable` only.
+
+```js
+{
+  db,          // Prisma client — deprecated escape hatch; prefer domain APIs
+  settings,    // get/set (global) + getPluginSetting/setPluginSetting (namespaced)
+  plugin,      // namespaced PluginData store — prefer this for KV state
+  logger,      // Pino logger scoped to this plugin
+  queue,       // background job queue
+  emit,        // event bus emit function
+  t,           // i18n translation function
+}
+```
+
+Isolation guidance:
+
+- Prefer `ctx.plugin` (`PluginData`) for plugin-owned state. See [plugin data storage](/docs/plugins/blocks/#plugin-data-storage).
+- Prefer `ctx.settings.getPluginSetting` / `setPluginSetting` or package-driven helpers in `#/core/plugins/settings.server` (`loadPluginSettings`, `getPluginSettingValue`, `getPluginSettingSecret`) over unnamespaced `ctx.settings.get/set`.
+- Prefer domain APIs in `app/core/*` over raw Prisma.
+- Avoid `ctx.db` except as a last resort.
+
+### ctx.db
+
+The Prisma client instance. This is a **deprecated escape hatch** — prefer domain APIs in `app/core/*` and namespaced `ctx.plugin` storage. Raw Prisma access bypasses domain invariants (stock, totals, fulfillment status, and similar) and can leave the shop inconsistent.
+
+Use `ctx.db` only when no domain API covers the read or write you need (for example ad-hoc reporting queries). Do not mutate orders, inventory, or payments through Prisma directly.
+
+Plugins cannot define their own Prisma models. All plugin-specific persistence must go through `ctx.plugin`.
+
+### ctx.settings
+
+Access to the platform `Setting` table (TTL-cached reads). Prefer the namespaced helpers so keys stay under `plugin.<pluginId>.*`:
+
+```js
+const apiKey = await ctx.settings.getPluginSetting('apiKey');
+await ctx.settings.setPluginSetting('apiKey', '…');
+
+// Global (unnamespaced) — avoid for plugin-owned config
+const value = await ctx.settings.get('my-setting-key');
+await ctx.settings.set('my-setting-key', 'some-value');
+```
+
+Declared admin settings also use `#/core/plugins/settings.server`. Do not collide with core keys such as `enabledPlugins` or `activeTheme`.
+
+### ctx.plugin
+
+Namespaced key-value storage scoped to this plugin. All reads and writes target the `PluginData` table, keyed by `pluginId` and `key`. Values are automatically JSON-serialized on write and deserialized on read.
+
+```js
+const data = await ctx.plugin.get('myKey'); // parsed value or null
+await ctx.plugin.set('myKey', { count: 42 }); // upserts, serializes to JSON
+await ctx.plugin.delete('myKey'); // deletes the row
+```
+
+### ctx.logger
+
+A [Pino](https://getpino.io/) logger pre-configured with `{ plugin: pluginId }` in the child context. Use this instead of a bare `console.log`.
+
+```js
+ctx.logger.info({ orderId }, 'Processing order');
+ctx.logger.error({ err }, 'Something went wrong');
+```
+
+### ctx.queue
+
+Enqueues a background job onto the LiteQuu queue (`#/libs/queue.server`). `buildCtx` wraps `queue.createJob` / `add`; `enqueue` is an alias of `add`.
+
+```js
+ctx.queue.enqueue('send-welcome-email', { customerId, email });
+// or
+ctx.queue.add('send-welcome-email', { customerId, email });
+```
+
+Jobs are persisted (SQLite via `QUEUE_DATABASE_PATH` by default) and processed by registered LiteQuu workers. Register a processor with `defineQueueJob` from `#/libs/queue.server` (or an existing core job) before enqueueing custom job names.
+
+### ctx.emit
+
+Queues a domain event via `queueEmit` (`#/core/events/job.server`). Plugins can emit custom events that other plugins (or core) can listen to.
+
+```js
+ctx.emit('my-plugin.something-happened', { data });
+```
+
+Use a namespaced event name (prefixed with your plugin id) to avoid collisions with platform events.
+
+### ctx.t
+
+An i18n translation function backed by the default-locale message catalog. Accepts a translation key and optional interpolation params.
+
+```js
+const label = ctx.t('myPlugin.admin.title');
+const greeting = ctx.t('myPlugin.welcome', { name: 'Ada' });
+```
+
+Translation keys are contributed via your plugin’s `i18n/en.json` file. See [plugin i18n](/docs/plugins/create/#i18n).
+
+## Event hook catalog
+
+These are the core platform events that bermooda emits. Declare handlers in the runtime `hooks` field using `defineHooks()`.
+
+### Post-action hooks
+
+These events fire after the underlying domain work has happened. Callers enqueue with `queueEmit` from `#/core/events/job.server` (LiteQuu `domain_event` job). The job imports `dispatchHandlers` and runs subscribers asynchronously and fault-tolerantly after enqueue: if a handler throws, the job path logs the error and remaining handlers still run. This is durable enqueue, not only in-process fire-and-forget. Post-hooks do not receive `ctx`; they receive only the payload.
+
+#### Orders and checkout
+
+| Event | Payload fields | Description |
+| --- | --- | --- |
+| `checkout.started` | `sessionId`, `cartId`, `customerId`, `email` | Fired after a checkout session is created and the cart is locked. |
+| `checkout.completed` | `orderId`, `orderNumber`, `checkoutSessionId`, `customerId`, `email`, `status`, `subtotalCents`, `shippingCents`, `taxCents`, `discountCents`, `totalCents`, `currency` | Fired after `placeOrder()` succeeds and the checkout session is marked completed. |
+| `order.created` | `orderId`, `orderNumber`, `checkoutSessionId`, `customerId`, `email`, `status`, `subtotalCents`, `shippingCents`, `taxCents`, `discountCents`, `totalCents`, `currency` | Fired after an order is placed successfully. |
+| `order.confirmed` | `orderId`, `orderNumber` | Fired when a successful payment webhook confirms an order. |
+| `order.updated` | `orderId`, `previousStatus`, `status` | Fired when `updateOrderStatus()` changes an order status value. |
+| `order.fulfilled` | `orderId`, `status` | Fired when fulfillment sync transitions an order to `fulfilled`. |
+| `order.cancelled` | `orderId`, `orderNumber` | Fired after an order is cancelled. |
+| `order.returned` | `returnId`, `orderId` | Fired after a return is received and the order is marked as returned. |
+
+#### Cart, customer, and catalog
+
+| Event | Payload fields | Description |
+| --- | --- | --- |
+| `cart.created` | `cartId`, `token`, `currency`, `customerId`, `expiresAt` | Fired after a new cart is created. |
+| `cart.itemAdded` | `cartId`, `variantId`, `quantity`, `lineId` | Fired after a line is created or incremented in a cart. |
+| `cart.itemRemoved` | `cartId`, `lineId` | Fired after a cart line is removed. |
+| `cart.updated` | `cartId`, `lineId`, `quantity` | Fired after a cart line quantity is updated to a positive value. |
+| `cart.abandoned` | `cartId`, `token`, `email`, `currency`, `lineCount`, `updatedAt` | Fired when the abandoned-cart job decides a reminder sequence should run. `updatedAt` is an ISO timestamp string. |
+| `customer.registered` | `customerId`, `email`, `name` | Fired after Better Auth creates a new customer account row. |
+| `product.created` | `productId` | Fired after a product record is created. |
+| `product.updated` | `productId` | Fired after a product record is updated. |
+| `product.deleted` | `productId` | Fired after a product record is deleted. |
+
+#### Fulfillment, payments, returns, and inventory
+
+| Event | Payload fields | Description |
+| --- | --- | --- |
+| `shipment.created` | `shipmentId`, `orderId` | Fired after a shipment record is created. |
+| `shipment.shipped` | `shipmentId`, `orderId`, `carrier`, `trackingNumber`, `trackingUrl` | Fired after a shipment is marked shipped. |
+| `shipment.delivered` | `shipmentId`, `orderId` | Fired after a shipment is marked delivered. |
+| `payment.succeeded` | `type`, `orderId`, `amount` | Normalized payment-provider webhook event for a successful payment. `amount` is provider-normalized cents when available. |
+| `payment.failed` | `type`, `orderId` | Normalized payment-provider webhook event for a failed or expired payment. |
+| `payment.other` | `type` | Plugin-facing catch-all for unhandled payment-provider webhook event types. |
+| `payment.refunded` | `refundId`, `orderId`, `amountCents` | Fired after a refund record is created. |
+| `return.requested` | `returnId`, `orderId`, `customerId` | Fired after a return request is created. |
+| `return.approved` | `returnId`, `orderId`, `resolution` | Fired after a return request is approved. |
+| `return.received` | `returnId`, `orderId` | Fired after returned inventory is received. |
+| `return.completed` | `returnId`, `orderId`, `resolution`, `amountCents` | Fired after a return is completed as refund, store credit, or exchange. |
+| `return.cancelled` | `returnId`, `orderId` | Fired after a return request is cancelled. |
+| `inventory.restocked` | `variantId` | Fired when inventory for a variant goes from out-of-stock to in-stock. |
+
+Events intentionally not emitted:
+
+- `customer.loggedIn` — skipped to avoid a noisy auth event surface.
+- `product.viewed` — page-view analytics should use a separate analytics stream instead of the domain event bus.
+
+Hook handlers are plain async functions. They receive the payload as their only argument:
+
+```js
+hooks: defineHooks({
+  'order.updated': async ({ orderId, previousStatus, status }) => {
+    // handle the event
+  },
+  'customer.registered': async ({ customerId, email, name }) => {
+    // handle the event
+  },
+}),
+```
+
+Handlers are invoked by the domain-event job worker after `queueEmit` enqueues. Completion order is not guaranteed. If a post-hook handler throws, the error is contained and does not affect other handlers or the original caller.
+
+### Before-hooks (blocking filters)
+
+Before-hooks let a plugin **veto** a domain action before any database write occurs. Unlike post-hooks, `emitBefore` is **request-path blocking and fail-closed** — it awaits all handlers on the critical path and does not go through the queue. Register them in the runtime `hooks` field using keys that start with `before.`:
+
+```js
+import { defineHooks, definePlugin, deny } from '#/core/plugins/index.server';
+
+export const pluginManifest = definePlugin({
+  hooks: defineHooks({
+    'before.shipment.ship': async ({ orderId, order }) => {
+      if (order.status === 'on_hold') {
+        deny('Order is on hold and cannot be shipped.', { code: 'FRAUD_HOLD' });
+      }
+    },
+    'order.created': async (payload) => {
+      // post-hook
+    },
+  }),
+});
+```
+
+| Aspect | Behavior |
+| --- | --- |
+| Allow | Return normally (return value ignored). |
+| Block | Call `deny(reason, { code })` — or throw any error (fail-closed). |
+| Dispatch | Handlers run **in parallel**; `emitBefore` still **awaits all** before returning. Every handler runs even if another fails. |
+| Errors | Fail-closed: if any handler throws, the action aborts. Prefers the first-registered `HookAbortError`, else the first-registered plain error. |
+| Performance | Filters run on the request critical path before the transaction — keep them fast and avoid mutating the shared payload. |
+
+Import `deny`, `emitBefore`, `HookAbortError`, and `isHookAbort` from `#/core/plugins/index.server` (re-exported from the event bus).
+
+When a plugin vetoes an action, core surfaces `HookAbortError.reason` to merchants. Admin API routes return `422` with `{ error, code, blockedBy }`. A veto is a business decision, not an operational error — it is not sent through `handleError` / `sendErrorAlert`.
+
+#### Before-hook catalog
+
+| Event | Payload | Blocks |
+| --- | --- | --- |
+| `before.shipment.create` | `{ orderId, order, data }` | Creating a shipment record |
+| `before.shipment.ship` | `{ shipmentId, orderId, shipment, order, data }` | Marking a shipment shipped |
+| `before.shipment.deliver` | `{ shipmentId, orderId, shipment }` | Marking a shipment delivered |
+| `before.order.place` | `{ checkoutSessionId, session, cart, totals }` | Order creation at checkout |
+| `before.order.cancel` | `{ orderId, order }` | Cancelling an order |
+| `before.refund.create` | `{ orderId, order, amountCents, reason }` | Issuing a refund |
+| `before.checkout.advance` | `{ sessionId, session, fromStep, toStep, stepData }` | Advancing to the next checkout step |
+
+Reserved error codes (plugins may define their own): `HOOK_BLOCKED` (default), `FRAUD_HOLD`, `INVENTORY_HOLD`, `REFUND_POLICY`, `ADDRESS_INVALID`, `COMPLIANCE_HOLD`.

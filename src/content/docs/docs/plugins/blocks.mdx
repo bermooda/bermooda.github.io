@@ -1,0 +1,243 @@
+---
+title: Plugin blocks and routes
+description: Storefront and admin slot blocks, plugin admin and storefront routes, and PluginData storage.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Plugins extend the UI by contributing React blocks into named slots, and by mounting their own admin and storefront routes. Persistent plugin state goes through namespaced `PluginData`, not custom Prisma models.
+
+## Storefront slots
+
+Plugins inject UI into named slots in the active [theme](/docs/themes/slots/). Each slot is a well-known insertion point that the theme renders at a specific location on the page.
+
+| Slot name | Location |
+| --- | --- |
+| `home.hero` | Home page — inside the hero section |
+| `home.featured` | Home page — featured products area |
+| `product.afterDescription` | Product page — below the product description |
+| `product.sidebar` | Product page — sidebar area |
+| `category.top` | Category listing page — above the product grid |
+| `cart.summary` | Cart page — order summary area |
+| `checkout.afterPayment` | Checkout flow — below the payment form |
+| `account.dashboard` | Customer account dashboard |
+| `layout.header` | Global layout — inside the header |
+| `layout.footer` | Global layout — inside the footer |
+
+These names match theme `SLOT_NAMES`. Themes fetch blocks with `getSlotBlocks` / `getSlotBlocksMap` and render them with `SlotBlocks`. See [theme slots](/docs/themes/slots/).
+
+### Contributing a storefront block
+
+Runtime only reads `manifest.blocks` (components imported and listed in `index.server.js`). Files under `blocks/` are **not** auto-discovered — omitting a block from the manifest means it never renders, even if the file exists.
+
+Create a `.jsx` file under your plugin’s `blocks/` directory using lowercase, hyphenated paths. Mirror each dotted segment of the slot name as its own directory segment, then use a hyphenated leaf file (for example slot `product.afterDescription` → `blocks/product/after-description.jsx`):
+
+```txt
+app/plugins/my-plugin/blocks/product/after-description.jsx
+```
+
+Register it explicitly in `index.server.js`:
+
+```js
+import ProductAfterDescriptionBlock from './blocks/product/after-description';
+
+export const pluginManifest = definePlugin({
+  blocks: {
+    'product.afterDescription': ProductAfterDescriptionBlock,
+  },
+});
+```
+
+The file must have a default export that is a React component. The component receives slot-specific props (for example `product` on product page slots):
+
+```jsx
+export default function ProductAfterDescriptionBlock({ product }) {
+  if (!product) return null;
+  return <div>{/* rendered below the product description */}</div>;
+}
+```
+
+The theme renders slot blocks via `getSlotBlocks(slotName)` from `app/core/themes/index.server.js`. Blocks only render when the plugin is enabled; order follows `pluginOrder ∩ enabledPlugins`.
+
+<Aside type="caution" title="Blocks are not globbed">
+Putting a file in `blocks/` is a convention for authors. The engine never scans that folder. Every slot you want to fill must appear in the `blocks` map passed to `definePlugin()`.
+</Aside>
+
+## Admin slots
+
+Plugins can inject UI into named slots in admin views. Admin and storefront slots share the same manifest `blocks` map — use distinct slot names for each surface.
+
+| Slot name | Location |
+| --- | --- |
+| `dashboard.widgets` | Admin dashboard — below KPI tiles |
+| `order.detail` | Order detail page — below the page header |
+| `customer.detail` | Customer detail page — below the page header |
+| `product.editor` | Product editor — below the page header |
+
+The canonical list lives in `ADMIN_SLOT_NAMES` in `app/core/admin/slots/index.server.js`.
+
+Same contribution pattern as storefront: put the component under `blocks/`, then register it in `manifest.blocks` from `index.server.js`. For example, slot `dashboard.widgets` → `blocks/dashboard/widgets.jsx`.
+
+```js
+import DashboardWidgetsBlock from './blocks/dashboard/widgets';
+
+export const pluginManifest = definePlugin({
+  blocks: {
+    'dashboard.widgets': DashboardWidgetsBlock,
+  },
+});
+```
+
+Admin route loaders resolve blocks server-side with `getAdminSlotBlocksMap()` from `app/core/admin/slots/index.server.js` and pass them to the shared `SlotBlocks` component in `app/components/slot-blocks/index.jsx`.
+
+### Admin slot props
+
+Each admin page passes context to plugin blocks via `slotProps`:
+
+| Admin page | `slotProps` |
+| --- | --- |
+| Dashboard | `{ totalOrders, totalRevenueCents, abandonedCheckouts, lowStockCount, recentOrders }` |
+| Order detail | `{ order }` |
+| Customer detail | `{ customer }` |
+| Product editor | `{ product, mode }` (`mode` is `'create'` or `'edit'`) |
+
+Blocks only render when the plugin is enabled. Render order follows `pluginOrder ∩ enabledPlugins` (same as storefront slots and i18n catalog merge).
+
+## Admin routes
+
+A plugin that includes `admin/routes/index.server.js` and `admin/routes.client.js` gets a dedicated admin page mounted at `/admin/plugins/<slug>/*`. The slug segment is `bermooda.slug`, not the full package id.
+
+<Aside type="note" title="Enable policy (admin)">
+The admin dispatcher does **not** check whether the plugin is enabled. Admin UI stays reachable for configuration even when the plugin is disabled.
+</Aside>
+
+Admin routes are defined as a server/client pair:
+
+- `admin/routes/index.server.js` — exports route descriptors with optional `loader` and `action`
+- `admin/routes.client.js` — exports route descriptors with the client `Component`
+
+Both files must export the same `routes` array shape. Each route entry follows React Router conventions:
+
+```js
+{
+  path: '',              // string — path relative to /admin/plugins/<slug>/
+  loader: async () => { /* return data */ },  // optional
+  action: async ({ request, params }) => { /* mutate */ },  // optional
+  Component: MyComponent,                     // required — React component
+}
+```
+
+Paths may use `:param` segments and a trailing `*` splat (captured as `params.splat`). Exact paths win over patterns; otherwise the first registered matching pattern wins. Matched params are merged into React Router `params` when the dispatcher calls `loader` / `action`.
+
+Example server routes file (`admin/routes/index.server.js`):
+
+```js
+import {
+  readPluginData,
+  writePluginData,
+} from '#/core/plugins/data/index.server';
+
+const PLUGIN_ID = '@acme/my-plugin';
+
+export const routes = [
+  {
+    path: '',
+    async loader() {
+      const items = await readPluginData(PLUGIN_ID, 'items', []);
+      return { items };
+    },
+    async action({ request }) {
+      const formData = await request.formData();
+      const items = await readPluginData(PLUGIN_ID, 'items', []);
+      await writePluginData(PLUGIN_ID, 'items', [
+        String(formData.get('label') ?? ''),
+        ...items,
+      ]);
+      return { ok: true };
+    },
+    Component: MyAdminPage,
+  },
+];
+
+function MyAdminPage({ loaderData }) {
+  const { items } = loaderData ?? { items: [] };
+  return <div>{/* render items */}</div>;
+}
+```
+
+The `loader` function runs on the server before the component renders. Components receive loader data via the `loaderData` prop. The dispatcher `action` resolves the same route descriptor and invokes `descriptor.action` when present; otherwise it responds with `405 Method Not Allowed`.
+
+The dispatcher resolves admin pages with `resolvePluginAdminRoute(pluginSlug, params['*'])`. Route presence is glob-driven; do not add `adminRoutes` to package metadata.
+
+Prefer `#/core/plugins/data/index.server` (`readPluginData` / `writePluginData`) over importing Prisma. Oxlint blocks `#/libs/prisma*` inside `app/plugins/**`.
+
+## Storefront routes
+
+A plugin that includes `storefront/routes/index.server.js` and `storefront/routes.client.js` gets a dedicated storefront page mounted at `/apps/<slug>/*`. The slug segment is `bermooda.slug`.
+
+<Aside type="caution" title="Enable policy (storefront)">
+`/apps/:pluginId/*` requires the plugin to be **enabled** (loader and action). Disabled or unknown plugins return 404. This differs from the admin dispatcher, which stays reachable for config while disabled.
+</Aside>
+
+Storefront routes follow the same split-module pattern as admin routes:
+
+- `storefront/routes/index.server.js` — exports route descriptors with optional `loader` and `action`
+- `storefront/routes.client.js` — exports route descriptors with the client `Component`
+
+Each route entry has the same shape, with `path` relative to `/apps/<slug>/`. Paths may use `:param` segments and a trailing `*` splat. Exact paths win over patterns; otherwise the first registered matching pattern wins.
+
+The storefront dispatcher:
+
+- uses `params['*']` as the splat path
+- requires the plugin to be registered **and enabled** (loader and action)
+- resolves the server descriptor with `resolvePluginStorefrontRoute(pluginSlug, params['*'])`
+- runs the descriptor `loader` on the server when present
+- runs the descriptor `action` on POST/mutations when present; otherwise `405 Method Not Allowed`
+- resolves the client component from `storefront/routes.client.js`
+- wraps the rendered page in the active theme `Layout` when available
+
+That `Layout` wrap is the exception described in [theme layout ownership](/docs/themes/components/#layout-ownership): plugin storefront pages are not theme pages, so the dispatcher supplies chrome.
+
+Example client routes file (`storefront/routes.client.js`):
+
+```js
+import { AnalyticsPage } from './analytics-page';
+
+export const routes = [{ path: '', Component: AnalyticsPage }];
+```
+
+Example URL:
+
+```txt
+/apps/my-plugin/
+```
+
+## Plugin data storage
+
+Plugins have a namespaced key-value store backed by the `PluginData` database table.
+
+The table schema has a composite unique constraint on `(pluginId, key)`. Two different plugins can use the same key name without conflict, and reads/writes for one plugin can never touch another plugin’s data. `pluginId` is the full package name.
+
+Values are stored as JSON strings. `ctx.plugin.set()` serializes with `JSON.stringify` before writing, and `ctx.plugin.get()` parses with `JSON.parse` on read. If parsing fails (for example if the stored value is a raw string), `get()` returns the raw string value.
+
+```js
+// Store a structured object
+await ctx.plugin.set('config', { apiKey: 'abc123', endpoint: 'https://...' });
+
+// Read it back — returns the parsed object
+const config = await ctx.plugin.get('config');
+
+// Append to a list (common pattern for event log plugins)
+const existing = (await ctx.plugin.get('events')) ?? [];
+const updated = [newEvent, ...existing].slice(0, 100);
+await ctx.plugin.set('events', updated);
+
+// Remove a key
+await ctx.plugin.delete('config');
+```
+
+From route loaders and other modules that do not receive `ctx`, use `readPluginData(pluginId, key, fallback)` and `writePluginData(pluginId, key, value)` from `#/core/plugins/data/index.server`.
+
+<Aside type="note" title="No custom Prisma models">
+`PluginData` is the only storage mechanism plugins have. Plugins cannot define custom Prisma models. If you need relational storage or more complex queries, serialize your data structures into the `value` column.
+</Aside>

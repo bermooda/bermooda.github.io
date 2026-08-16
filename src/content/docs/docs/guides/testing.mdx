@@ -1,0 +1,132 @@
+---
+title: Testing
+description: Vitest unit and server projects, file naming, factories, Prisma mocks, and 80% coverage on app/core.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+bermooda’s test suite uses [Vitest](https://vitest.dev/) with two projects: **unit** in happy-dom (browser-like) and **server** in Node. Fast, isolated unit tests stay separate from server code that needs Node APIs or Prisma.
+
+Tests exercise behavior through mocks and factories rather than a real database. Prisma is mocked at the module level in server tests. A DB-per-worker pattern is available when an integration test needs a real SQLite file.
+
+## File naming
+
+| Pattern | Environment | Purpose |
+| --- | --- | --- |
+| `app/**/*.test.js` | happy-dom | Unit tests for pure logic, utilities, hooks |
+| `app/**/*.test.jsx` | happy-dom | Unit tests for JSX/React components |
+| `app/**/*.test.server.js` | Node | Server tests: Prisma services, loaders, adapters |
+| `app/**/*.test.server.jsx` | Node | Server tests for `.jsx` route modules (actions) |
+
+The `.test.server.js` / `.test.server.jsx` suffix keeps server files out of the unit project.
+
+Place each test next to the module it covers. Named modules wrap into a folder with an `index` entry so the test mirrors that name:
+
+```
+app/utils/slugify.js + slugify.test.js
+  → app/utils/slugify/index.js + index.test.js
+
+app/libs/error.server.js + error.server.test.js
+  → app/libs/error/index.server.js + index.test.server.js
+```
+
+Dynamic-segment and layout routes keep their filenames (`$provider.test.jsx`, `_layout.test.jsx`).
+
+Examples:
+
+```
+app/core/cart/index.test.server.js              # Mirrors index.server.js — Prisma mock, Node
+app/core/cart/lines/index.test.js               # Pure logic, happy-dom
+app/components/admin/slug-field/index.test.jsx  # React component, happy-dom
+app/routes/webhooks/$provider.test.jsx          # Route module, Node
+```
+
+## Commands
+
+| Command | Description |
+| --- | --- |
+| `npm run test` | Run all tests once (`vitest run`) |
+| `npm run test:watch` | Watch mode |
+| `npm run test:coverage` | Run all tests and emit coverage |
+
+Both projects run together by default. Target one:
+
+```bash
+npx vitest run --project unit
+npx vitest run --project server
+```
+
+Both projects load `app/test-setup.js` first: `@testing-library/jest-dom` matchers and `vi.clearAllMocks()` after every test. The `#` path alias maps to `./app`.
+
+## Factories
+
+Factories live in `app/test/factories/`. Each returns a complete, valid shape with defaults. Pass an overrides object to customize fields.
+
+```js
+import { makeUser } from '#test/factories/user.js';
+
+const user = makeUser({ role: 'ADMIN' });
+```
+
+| Factory | File | Shape |
+| --- | --- | --- |
+| `makeUser(overrides)` | `user.js` | id, email, emailVerified, name, role |
+| `makeCustomer(overrides)` | `customer.js` | Customer shape |
+| `makeProduct(overrides)` | `product.js` | id, variants, media, categories, options |
+| `makeVariant(overrides)` | `variant.js` | Variant shape |
+| `makeCart(overrides)` / `makeCartLine(overrides)` | `cart.js` | Cart / CartLine |
+| `makeOrder(overrides)` | `order.js` | Order shape |
+| `makeSetting(overrides)` | `setting.js` | Setting shape |
+
+Factories compose. Build a cart around a priced variant:
+
+```js
+const variant = makeVariant({ price: 2999 });
+const product = makeProduct({ variants: [variant] });
+const line = makeCartLine({ variantId: variant.id, quantity: 2 });
+const cart = makeCart({ lines: [line] });
+```
+
+## Prisma mock
+
+`makePrismaMock(models)` in `app/test/helpers/mocks.js` returns a mock client. Pass model name strings; each model gets `findUnique`, `findFirst`, `findMany`, `create`, `update`, `upsert`, `delete`, `deleteMany`, and `count`, plus `$transaction`.
+
+```js
+import { makePrismaMock, makeLoggerMock } from '#test/helpers/mocks.js';
+import { vi } from 'vitest';
+
+const db = makePrismaMock(['cart', 'cartLine', 'product']);
+const logger = makeLoggerMock();
+
+vi.mock('#core/db.server.js', () => ({ db }));
+
+test('adds a line to the cart', async () => {
+  db.cart.findUnique.mockResolvedValue(makeCart());
+  db.cartLine.create.mockResolvedValue(makeCartLine());
+
+  const result = await addLineToCart(db, { cartId: 'c1', variantId: 'v1' });
+
+  expect(db.cartLine.create).toHaveBeenCalledOnce();
+  expect(result.lines).toHaveLength(1);
+});
+```
+
+`makeLoggerMock()` returns `info`, `warn`, `error`, and `debug` as `vi.fn()`.
+
+Request helpers live in `app/test/helpers/request.js` for loader and action tests. `getTestDatabaseUrl(workerId)` in `db.js` returns a per-worker SQLite URL (`DATABASE_URL_TEST`, or a file under `/tmp` named `bermooda-test-` plus the worker id) for integration tests that need a real file.
+
+## Coverage
+
+Coverage uses the v8 provider and is scoped to `app/core/**`. Every file in that tree is included whether or not it has a test. CI enforces **80%** on statements, branches, functions, and lines. Dropping below any threshold fails `npm run test:coverage`.
+
+```bash
+npm run test:coverage
+```
+
+The report is written to `coverage/` and printed to the terminal. Open `coverage/index.html` for line-by-line detail.
+
+Focus tests on `app/core` domains: totals, cart, checkout, orders, plugins, themes, providers, i18n, currency, Stripe, webhooks, discounts, inventory, and auth boundaries.
+
+<Aside type="note">
+CI runs lint, build, and `npm run test:coverage` on every pull request. A coverage regression that drops `app/core/**` below 80% blocks the PR.
+</Aside>
