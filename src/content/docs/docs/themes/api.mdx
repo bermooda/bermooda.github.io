@@ -1,0 +1,133 @@
+---
+title: Theme API
+description: defineTheme, registerTheme, resolveActiveTheme, component lookup, slot helpers, and runtime constraints.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Server functions are exported from `app/core/themes/index.server.js`. Client-safe helpers: `defineTheme` from `#/core/themes/define`, and `getStorefrontComponent` from `#/core/themes/storefront-components`.
+
+## defineTheme
+
+`defineTheme(runtime)` validates theme runtime configuration. Throws a `TypeError` if `runtime` is not a non-null object. Throws an `Error` if `components` is missing or if any required component is absent from `runtime.components`.
+
+Returns the runtime object unchanged on success. Use this from theme `index.js`. Identity comes from sibling `package.json`.
+
+```js
+import { defineTheme } from '#/core/themes/define';
+
+export default defineTheme({
+  components: {
+    Layout,
+    HomePage,
+    ProductPage,
+    CategoryPage,
+    CartPage,
+    CheckoutLayout,
+    NotFoundPage,
+  },
+});
+```
+
+See [engine-required components](/docs/themes/components/#engine-required-components) for the names `defineTheme` enforces.
+
+## registerTheme
+
+`registerTheme(manifest)` validates a fully merged manifest, then stores it in the in-memory registry under `manifest.id`. Logs `Theme registered` at info level. Returns the validated manifest.
+
+Call this at application startup for every bundled theme after merging `package.json` identity with the `index.js` runtime export. Calling `registerTheme` with an `id` that is already registered overwrites the previous entry.
+
+```js
+import { mergeExtensionPackage } from '#/core/extensions/package-meta';
+import { registerTheme } from '#/core/themes/index.server';
+import runtime from '#/themes/aurora/index';
+import pkg from '#/themes/aurora/package.json';
+
+registerTheme(mergeExtensionPackage(pkg, runtime));
+```
+
+## resolveActiveTheme
+
+`resolveActiveTheme()` is async. Reads `Setting.activeTheme` from the database (cached for 5 minutes under the key `theme:active`). Returns the manifest from the in-memory registry whose full package id matches the stored value, or `null` if the setting is unset or the id is not registered.
+
+```js
+import { resolveActiveTheme } from '#/core/themes/index.server';
+
+const theme = await resolveActiveTheme();
+if (!theme) {
+  // no active theme configured, or the id is not registered
+}
+```
+
+**Cache invalidation:** `setActiveTheme(themeId)` writes `Setting.activeTheme`, deletes `theme:active`, clears the in-process preload cache, and busts the `i18n:` cache prefix (message catalogs embed the active theme slug). The admin themes UI uses this path so the current process picks up the change on the next request.
+
+## preloadStorefrontTheme
+
+`preloadStorefrontTheme()` is async. Resolves the active theme id (via `resolveActiveTheme`) and caches it in-process for 60 seconds. Returns the theme package id, or `@bermooda/theme-default` when unset. Used by `loadStorefrontPageContext`.
+
+Prefer [`loadStorefrontPageContext`](/docs/themes/slots/#page-context) in storefront loaders rather than calling this directly.
+
+## getStorefrontComponent
+
+`getStorefrontComponent(name, themeId)` is **sync** and client-safe. Resolves a single component by name from a registered theme. Import from `#/core/themes/storefront-components` (not from the server registry).
+
+- Callers **must** pass `themeId` from loader data (`loadStorefrontPageContext` or `preloadStorefrontTheme`).
+- Returns `null` if `themeId` is missing or unknown, or if the component is not in `manifest.components`.
+- There is **no** silent fallback to the first registered theme.
+
+```js
+import { getStorefrontComponent } from '#/core/themes/storefront-components';
+
+const Layout = getStorefrontComponent('Layout', themeId);
+```
+
+## getSlotBlocks
+
+`getSlotBlocks(slotName)` is async. Returns an ordered array of `{ pluginId, component }` objects for the given slot, ordered by `Setting.pluginOrder`. The plugin order setting is TTL-cached (5 minutes, key `setting:pluginOrder`).
+
+```js
+import { getSlotBlocks } from '#/core/themes/index.server';
+
+const blocks = await getSlotBlocks('home.hero');
+for (const { pluginId, component: Block } of blocks) {
+  // render <Block key={pluginId} />
+}
+```
+
+Only enabled plugins contribute blocks. See [theme slots](/docs/themes/slots/) and [plugin storefront blocks](/docs/plugins/blocks/).
+
+## getSlotBlocksMap
+
+`getSlotBlocksMap(slotNames)` is async. Returns an object keyed by slot name where each value is the ordered block array for that slot. Use this when a loader needs to hydrate multiple slots in one pass and pass a consistent `slotBlocks` map to the theme.
+
+```js
+import { getSlotBlocksMap } from '#/core/themes/index.server';
+
+const slotBlocks = await getSlotBlocksMap(['layout.header', 'layout.footer']);
+```
+
+## SLOT_NAMES
+
+`SLOT_NAMES` is an array of the 10 well-known slot name strings. Import this when you need to validate a slot name or enumerate all slots.
+
+```js
+import { SLOT_NAMES } from '#/core/themes/index.server';
+```
+
+The names and storefront locations are listed on [Slots](/docs/themes/slots/).
+
+## Notes and constraints
+
+- **Relative sibling imports.** Theme files must not import each other via `#/themes/…`; use relative paths. Keep `#/…` for core app modules.
+- **Client-safe runtime entry.** Theme `index.js` imports `defineTheme` from `#/core/themes/define`, not from the server-only registry. Component lookup uses `#/core/themes/storefront-components`.
+- **Server-only registry.** `app/core/themes/index.server.js` must never be imported in client code. The `.server.js` suffix enforces this in React Router / Vite builds.
+- **Own npm dependencies.** Themes may list packages in `package.json` `dependencies`. Install them into the theme folder (`npm install` in that directory — the CLI and `npm run extensions:install` / `extensions:install-deps` do this). Prefer `peerDependencies` for shared shop libraries (`react`, `react-dom`, `react-router`). Vite resolves nested `app/themes/<slug>/node_modules` from theme source during build and forces those runtime deps into the SSR bundle via `ssr.noExternal`.
+- **In-memory registry.** The registry is process-local. In a multi-process deployment every process registers themes independently at startup from the same source files, so the registry is consistent across processes without shared state.
+- **Single-process `activeTheme` caches.** `resolveActiveTheme` / `preloadStorefrontTheme` use in-process TTL caches. Multi-instance deploys may lag until each process’s TTL expires (or restart), even though the activating process busts its own cache immediately.
+- **i18n catalogs.** `loadMessages` merges core + active theme slug + plugins in `pluginOrder ∩ enabledPlugins`. `setActiveTheme` and plugin enable/order changes bust the `i18n:` cache prefix.
+- **No npm-package themes.** Themes must live under `app/themes/<slug>/` as local folders with package-style metadata. External theme packages installed via npm are not supported.
+- **Testing.** The `__resetRegistry()` export is provided exclusively for test teardown. Do not call it in production code.
+
+<Aside type="caution" title="Local folders only">
+Themes are not installed as npm packages into the shop. Put the theme under `app/themes/<slug>/`, keep `bermooda.slug` equal to the folder name, and register the full package `name` as the id.
+</Aside>

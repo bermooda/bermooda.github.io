@@ -1,0 +1,106 @@
+---
+title: Build a plugin
+description: Folder layout, a minimal plugin example, i18n, enable state across processes, and npm dependencies.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+First-party plugins install under `app/plugins/<slug>/` (for example `meilisearch`, `resend`, `sendgrid`, `aws-ses`). Third-party plugins follow the same layout. Identity lives in `package.json`; runtime lives in `index.server.js`. See the [package contract](/docs/plugins/#packagejson-contract) and [hooks API](/docs/plugins/hooks/).
+
+## Minimal example
+
+```txt
+app/plugins/my-plugin/
+  package.json
+  index.server.js
+```
+
+`package.json` identity:
+
+```json
+{
+  "name": "@acme/my-plugin",
+  "version": "0.1.0",
+  "description": "Example plugin",
+  "private": true,
+  "bermooda": {
+    "title": "My Plugin",
+    "slug": "my-plugin",
+    "engine": ">=0.1.0"
+  }
+}
+```
+
+The folder name must equal `bermooda.slug` (`my-plugin`). The registered id is `@acme/my-plugin`.
+
+`index.server.js` runtime:
+
+```js
+import { defineHooks, definePlugin } from '#/core/plugins/index.server';
+
+export const pluginManifest = definePlugin({
+  hooks: defineHooks({
+    'order.created': async (payload) => {
+      // Handle the event. Import helpers directly — handlers do not receive ctx.
+    },
+  }),
+});
+
+export default pluginManifest;
+```
+
+Discovery merges `package.json` identity with the `definePlugin()` runtime export. Optional folders (`admin/`, `storefront/`, `blocks/`, `i18n/`) follow the layout below. Translation keys should be prefixed with a camelCase version of the plugin slug to avoid collisions.
+
+## Folder layout
+
+```txt
+app/plugins/
+  <slug>/
+    package.json             Identity — name/id, version, description, bermooda.title, bermooda.slug, settings.
+    index.server.js          Runtime entry. Calls definePlugin() and exports pluginManifest (including blocks).
+    admin/
+      routes/
+        index.server.js      Server route descriptors with optional loaders/actions.
+        index.test.server.js Colocated server route tests (optional).
+      routes.client.js       Client route descriptors with Components.
+    storefront/
+      routes/
+        index.server.js      Server route descriptors with optional loaders/actions.
+        index.test.server.js Colocated server route tests (optional).
+      routes.client.js       Client route descriptors with Components.
+    blocks/
+      <area>/
+        <leaf>.jsx           Convention only — import into index.server.js and list in manifest.blocks.
+                             Example: blocks/product/after-description.jsx → product.afterDescription
+    i18n/
+      en.json                Translation key/value pairs. Merged into the platform i18n catalog when enabled.
+```
+
+All files except `package.json` and `index.server.js` are optional. Only create the ones your plugin needs.
+
+`index.server.js` is the runtime module imported at startup. It must export `pluginManifest` as a named export and as the default export. Route modules are discovered from folders, not from `adminRoutes` or `storefrontRoutes` metadata. Slot blocks are **not** discovered from `blocks/` — only entries in `manifest.blocks` are used at runtime. See [blocks and routes](/docs/plugins/blocks/).
+
+## i18n
+
+Plugin catalogs under `i18n/<locale>.json` merge into storefront and admin message catalogs only for plugins in `pluginOrder ∩ enabledPlugins` (ordered intersection). Enabling or disabling a plugin, or changing plugin order, busts the `i18n:` cache prefix.
+
+Prefix keys with a camelCase form of the plugin slug (for example `myPlugin.admin.title`) so they do not collide with core or other plugins. Lifecycle callbacks can translate with `ctx.t` — see [the ctx object](/docs/plugins/hooks/#the-ctx-object).
+
+## Single-process enable state
+
+`isEnabled`, wired hooks, and providers live in the current Node process. Multi-instance deploys can diverge after a toggle until each process reloads plugins (restart) or you add shared invalidation. Persisted `enabledPlugins` is the source of truth across restarts; in-memory wiring is not shared.
+
+Enable and disable (and [theme activation](/docs/themes/create/)) update only the process that handled the admin request (live wiring / local cache bust). Other instances keep their in-memory plugin registry and `activeTheme` TTL caches until restart or expiry.
+
+<Aside type="caution" title="Restart every instance after a toggle">
+After plugin enable/disable or a theme switch, restart **all** app processes so every instance matches persisted `enabledPlugins` / `activeTheme`. Otherwise you accept per-process divergence and TTL lag (theme resolution is cached about 5 minutes; plugin hook wiring does not catch up without a restart or shared invalidation). There is no built-in cross-instance invalidation.
+</Aside>
+
+## Plugin npm dependencies
+
+Plugins may declare their own packages in `package.json` `dependencies` / `optionalDependencies`. The bermooda CLI installs those into `app/plugins/<slug>/node_modules` on `plugin add`. Contributors install plugins with the CLI (`bermooda plugin add`); use `npm run extensions:install-deps` to refresh nested deps for extensions already on disk.
+
+- Prefer `peerDependencies` for shared shop libraries (`react`, `react-dom`, `react-router`, and similar) so they resolve from the shop root.
+- `npm run build` runs `prebuild` → `extensions:install-deps` so nested `node_modules` exist before Vite resolves imports.
+- Vite sets `ssr.noExternal` to the union of extension runtime dependency names so those packages are bundled into `build/server` (production images do not need nested extension `node_modules` at runtime).
+- Native addons that cannot be bundled should be shop-root dependencies (or peers installed at the shop root), not extension-only nested installs.

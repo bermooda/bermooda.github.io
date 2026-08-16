@@ -1,0 +1,67 @@
+---
+title: Themes
+description: How bermooda discovers, registers, and resolves storefront themes.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Themes control the visual presentation of the storefront. Each theme is a folder under `app/themes/<slug>/` with `package.json`, a client-safe `index.js`, a `components/` directory, and optional `i18n/` translations.
+
+The registered theme **id** is always the full package name from `package.json` `name` — for example `@bermooda/theme-default`. The filesystem path and i18n path use `bermooda.slug` — for example `app/themes/default/`. The folder name must equal that slug.
+
+## Engine responsibilities
+
+The theme engine does three jobs:
+
+1. **Runtime validation** — `defineTheme()` checks the component map in a client-safe entry module.
+2. **Discovery and registration** — bootstrap merges `package.json` identity with the `index.js` runtime export and stores the result in an in-memory registry keyed by full package id.
+3. **Resolution** — `resolveActiveTheme` reads the `activeTheme` setting from the database (TTL-cached for 5 minutes) and returns the matching manifest. The setting stores the full package id, not the slug.
+
+Theme registry code lives in `app/core/themes/index.server.js`. That module is server-only — never import it in client bundles.
+
+<Aside type="caution" title="Server-only registry">
+`app/core/themes/index.server.js` must never be imported from client code. The `.server.js` suffix enforces this in React Router and Vite builds. Theme `index.js` files import `defineTheme` from `#/core/themes/define`. Component lookup uses `#/core/themes/storefront-components`.
+</Aside>
+
+## Discovery
+
+Both the server registry and the client-safe component registry discover themes with Vite `import.meta.glob('#/themes/*/index.js')` plus sibling `package.json` files. Both globs stay in place: the client module needs its own eager graph for browser and SSR component resolution; the server module needs its own for bootstrap registration and engine checks.
+
+Shared helpers live in `app/core/themes/discover-shared.js`:
+
+- `buildMergedThemeManifest(pkg, runtime)` — wraps `mergeExtensionPackage`
+- `indexThemeManifest(registry, manifest)` — indexes by package `id` and `slug`
+
+### Failure modes
+
+Malformed packages (bad `package.json` identity, merge errors, invalid manifests) are skipped rather than crashing startup, with different logging on each surface:
+
+| Surface | Behavior |
+| --- | --- |
+| Server (`discoverThemes`) | Log via `#/utils/logger.server` and skip (`Skipping malformed theme`) |
+| Client (`storefront-components`) | Silent skip (no logger in the browser) |
+
+Incompatible `bermooda.engine` ranges are soft-skipped on the server with a log (`Skipping incompatible theme`). Folder/slug mismatches (`assertSlugMatchesFolder`) are also treated as malformed and skipped. A missing `package.json` for a theme folder, or a duplicate slug, still throws on the server.
+
+<Aside type="note" title="Engine range vs. CLI">
+`bermooda.engine` is checked against the shop root `package.json` `version`. The bermooda CLI rejects install and update when the range is incompatible. At runtime, discovery logs and skips incompatible themes instead of failing startup.
+</Aside>
+
+## Id vs. slug
+
+Keep these two identifiers distinct:
+
+| Value | Source | Used for |
+| --- | --- | --- |
+| **id** | `package.json` `name` | Registry key, `activeTheme` setting, theme settings prefix |
+| **slug** | `bermooda.slug` | Folder name under `app/themes/`, i18n path, display URLs |
+
+`bermooda.slug` must match `^[a-z0-9]+(?:-[a-z0-9]+)*$`. Bundled themes live at `app/themes/<slug>/`.
+
+## Next steps
+
+- [Package contract](/docs/themes/package/) — `package.json` fields, `defineTheme`, imports, and folder layout
+- [Components](/docs/themes/components/) — engine-required, route-required, and optional components
+- [Slots](/docs/themes/slots/) — named injection points for [plugin blocks](/docs/plugins/blocks/)
+- [Create a theme](/docs/themes/create/) — fork the default theme and activate it
+- [Theme API](/docs/themes/api/) — `defineTheme`, `resolveActiveTheme`, slot helpers, and constraints

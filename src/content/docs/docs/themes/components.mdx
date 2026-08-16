@@ -1,0 +1,70 @@
+---
+title: Theme components
+description: Engine-required, route-required, and optional storefront components, plus who owns Layout.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A theme’s `components` map is the contract between the engine, storefront routes, and the React tree. `defineTheme` enforces a small required set. Storefront routes expect a larger set and throw if those names are missing. A few helpers are optional.
+
+## Engine-required components
+
+Every theme must supply these names in its `components` map. `defineTheme` throws if any are absent (`REQUIRED_COMPONENTS` in `app/core/themes/manifest.js`).
+
+| Component name | Where it renders |
+| --- | --- |
+| `Layout` | Theme chrome (nav, footer, and similar). Pages self-wrap this — see [Layout ownership](#layout-ownership). |
+| `HomePage` | `/` — the storefront home page |
+| `ProductPage` | `/products/:slug` — single product detail page |
+| `CategoryPage` | `/categories/:slug` — product listing for a category |
+| `CartPage` | `/cart` — shopping cart |
+| `CheckoutLayout` | `/checkout` — multi-step checkout shell (used as the page) |
+| `NotFoundPage` | Catch-all 404 (`routes/404.jsx`) |
+
+## Route-required components
+
+Storefront routes resolve these via `getStorefrontComponent` and **throw** if they are missing. Ship them in a complete theme even though `defineTheme` does not enforce them.
+
+| Component name | Where it renders |
+| --- | --- |
+| `PagePage` | `/pages/:slug` (and CMS page paths) |
+| `CollectionPage` | `/collections/:handle` |
+| `SearchPage` | `/search` |
+| `CheckoutThankYouPage` | `/thank-you/:orderNumber` — post-purchase confirmation |
+| `AccountLayout` | Shell for authenticated `/account/*` |
+| `AccountDashboard` | `/account` — customer overview |
+| `AccountOrdersPage` | `/account/orders` — order history |
+| `AccountOrderDetailPage` | `/account/orders/:id` — single order detail |
+| `AccountAddressesPage` | `/account/addresses` — saved address management |
+| `AccountProfilePage` | `/account/profile` — profile editing |
+| `AccountWishlistPage` | `/account/wishlist` |
+| `AccountLoyaltyPage` | `/account/loyalty` |
+| `LoginPage` | `/account/login` |
+| `RegisterPage` | `/account/register` |
+| `ForgotPasswordPage` | `/account/forgot-password` |
+| `ResetPasswordPage` | `/account/reset-password` |
+
+## Optional components
+
+Theme-internal helpers used by other theme components. Routes do not throw if these are absent.
+
+| Component name | Purpose |
+| --- | --- |
+| `ProductCard` | Reusable card used inside product grids |
+| `ProductGrid` | Grid layout for lists of `ProductCard` items |
+| `LocaleSwitcher` | UI control for changing the active locale |
+| `CurrencySwitcher` | UI control for changing the active currency |
+
+## Layout ownership
+
+Storefront `_layout.jsx` does **not** render the theme `Layout`. It provides i18n context, menus, locale/currency, and layout [slot blocks](/docs/themes/slots/) to child routes via the loader.
+
+Theme page components **self-wrap** with `Layout` (nav and footer chrome). Route modules must **not** wrap `Layout` around theme pages — including `routes/404.jsx`, which renders only `NotFoundPage`. Themes must wrap `NotFoundPage` the same way as other pages (for example `StorefrontShell` in `@bermooda/theme-default`).
+
+<Aside type="caution" title="Pages own chrome">
+If a theme page forgets to wrap `Layout`, that route renders without nav and footer. The 404 page is included: `NotFoundPage` must self-wrap, because `routes/404.jsx` does not add `Layout`.
+</Aside>
+
+The sole route-owned `Layout` exception is the plugin apps host (`storefront/apps/$pluginId.jsx` at `/apps/:pluginId/*`). Plugin storefront pages are not theme pages and cannot import theme `Layout` without coupling, so that dispatcher resolves `Layout` once and wraps plugin content (and status messages). See [plugin storefront routes](/docs/plugins/blocks/#storefront-routes).
+
+Account routes use optional-but-route-required `AccountLayout` from `account/_layout.jsx`. The checkout page **is** `CheckoutLayout` — not a nested layout wrapper around other theme pages.
