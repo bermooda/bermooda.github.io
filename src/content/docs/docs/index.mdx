@@ -1,0 +1,48 @@
+---
+title: bermooda
+description: Own your ecommerce stack. Open-source storefront, admin, and REST API in one React Router app.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="Beta">
+bermooda is in active beta. APIs, schemas, and CLI behavior may change before a stable 1.0 release.
+</Aside>
+
+**Own your ecommerce stack.** bermooda is an open-source ecommerce platform that ships as one deployable app: a themed storefront, a merchant admin, and a REST API.
+
+Clone it, scaffold a shop in minutes, and run catalog, cart, checkout, orders, and staff tools without stitching together a pile of SaaS products. Domain logic lives in `app/core/*`, so you can read, change, and extend the engine like any other Node app.
+
+## One service, three surfaces
+
+Storefront, admin, and public/admin REST APIs all run in a single [React Router](https://reactrouter.com/) app. One process, one database, one place to ship changes.
+
+## Why engineers try it
+
+- **One service, three surfaces** — storefront, admin, and REST APIs in a single app
+- **Real commerce primitives** — catalog, cart, checkout, payments, shipping, customers, discounts, and inventory under `app/core/*`
+- **Themes and plugins** — swap storefront UI under `app/themes/*`; extend behavior with hook-based plugins under `app/plugins/*`
+- **Local-first** — SQLite for development, PostgreSQL when you need it; no Docker or external database required to start
+- **CLI-first setup** — `bermooda install` scaffolds dependencies, env, database, admin user, and store name
+
+## Stack
+
+| Layer | Choice |
+| --- | --- |
+| Runtime | Node.js ≥ 24 |
+| App framework | React Router (SSR, loaders, actions) |
+| UI | React, Tailwind CSS |
+| Build | Vite |
+| Data | Prisma · SQLite (local) · PostgreSQL (production-ready) |
+| Auth | [better-auth](https://www.better-auth.com/) (separate admin/staff and customer sessions) |
+| Payments | Stripe |
+| Email | Resend (+ React Email templates) |
+| Deploy | Plain Node / Docker |
+| Quality | Vitest, oxlint, oxfmt |
+
+## Next steps
+
+- [Quick start](/docs/getting-started/) — scaffold a shop with the CLI
+- [Themes](/docs/themes/) — how storefront UI is packaged and rendered
+- [Plugins](/docs/plugins/) — hooks, blocks, and extension points
+- [REST API](/docs/api/) — public and admin HTTP contracts

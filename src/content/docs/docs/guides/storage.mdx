@@ -1,0 +1,95 @@
+---
+title: Storage
+description: S3-compatible object storage for product media, including MinIO locally and upload helpers.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+bermooda uses S3-compatible object storage for product media and other uploads. Storage is **manually configured** — the app reads explicit environment variables; it does not auto-provision buckets.
+
+## Environment variables
+
+| Variable | Description | Example |
+| --- | --- | --- |
+| `STORAGE_ENDPOINT` | S3-compatible endpoint URL | `https://s3.amazonaws.com` |
+| `STORAGE_REGION` | Storage region | `us-east-1` |
+| `STORAGE_BUCKET` | Bucket name | `bermooda-media` |
+| `STORAGE_ACCESS_KEY` | Access key ID | — |
+| `STORAGE_SECRET_KEY` | Secret access key | — |
+| `STORAGE_PUBLIC_URL` | Public base URL for serving objects | `https://bermooda-media.s3.amazonaws.com` |
+
+Works with AWS S3, MinIO, Cloudflare R2, and other S3-compatible providers.
+
+## Local development
+
+`STORAGE_*` variables are not required for routes that never upload media. The storage client throws a descriptive error if an unconfigured code path is hit.
+
+To test storage locally, run [MinIO](https://min.io/):
+
+```bash
+docker run -p 9000:9000 -p 9001:9001 quay.io/minio/minio server /data --console-address ":9001"
+```
+
+Set `STORAGE_ENDPOINT=http://localhost:9000` and create a bucket in the MinIO console.
+
+## Key convention
+
+Uploaded media objects use:
+
+```
+media/{timestamp}-{randomSuffix}.{ext}
+```
+
+- `timestamp` — `Date.now()` at upload time
+- `randomSuffix` — random alphanumeric string to avoid collisions
+- `ext` — from the original filename, or from the MIME type if there is no extension
+
+Keys are stored in `Media.storageKey` so the object can be deleted when the media row is removed.
+
+## Low-level primitives
+
+`app/core/storage/client/index.server.js`:
+
+```js
+putObject(key, body, contentType); // → Promise<string> (public URL)
+getObjectUrl(key); // → string
+deleteObject(key); // → Promise<void>
+```
+
+`putObject` performs an HTTP PUT with `x-amz-acl: public-read`. That is enough for MinIO in development and many S3-compatible providers. For production that needs AWS Signature V4, replace the fetch-based implementation with `@aws-sdk/client-s3` (`PutObjectCommand`).
+
+| Failure | Behavior |
+| --- | --- |
+| Missing env vars | `putObject` / `deleteObject` throw `Error: Storage is not configured.` |
+| Upload failure | `putObject` throws with the provider HTTP status and message |
+| Missing object | `deleteObject` treats 404 as success (idempotent) |
+| `getObjectUrl` | Pure URL construction — never throws, works without credentials |
+
+## High-level API
+
+`app/core/storage/index.server.js` re-exports the primitives and adds media helpers:
+
+```js
+parseUploadFileInput(file); // validate FormData file
+uploadMedia(file); // → Promise<{ url, storageKey, mimeType, width, height, variantsJson }>
+uploadAndCreateMedia(file); // upload + persist Media row
+createMediaRecord(uploadResult); // persist upload metadata
+getMedia(mediaId); // load Media row (404 when missing)
+deleteMedia(mediaId); // delete storage objects + Media row
+deleteStoredObjects(media); // delete primary + variant objects
+loadStorageStatus(); // → { configured: boolean }
+isStorageConfigured(); // boolean env check
+```
+
+`uploadMedia` accepts a Web API `File` (browser form upload):
+
+- Generates a key with the convention above
+- Calls `putObject`
+- Builds responsive WebP variants at 640px and 1280px for optimizable images (via `sharp`)
+- Returns url, storageKey, mimeType, width, height, and variantsJson
+
+Client-safe helpers in `media.js` (`parseMediaVariants`, `resolveMediaUrl`, `resolveCatalogMediaUrl`, and related) let storefront themes pick a variant URL for a target width.
+
+<Aside type="note">
+See [Configuration](/docs/configuration/) for the full `STORAGE_*` list, and [Deploy](/docs/deploy/) when you leave local SQLite.
+</Aside>

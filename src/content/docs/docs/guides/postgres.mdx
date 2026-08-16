@@ -1,0 +1,59 @@
+---
+title: PostgreSQL
+description: Run bermooda on PostgreSQL in production and CI. SQLite remains the local default.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+bermooda defaults to **SQLite** for local development (`DATABASE_URL=file:./prisma/dev.db`). Production and CI can run on **PostgreSQL** with the same Prisma schema and application code.
+
+## Environment variables
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `DATABASE_URL` | `file:./prisma/dev.db` | SQLite file path or Postgres connection string |
+| `DATABASE_PROVIDER` | inferred from URL | Optional override: `sqlite` or `postgresql` |
+
+```bash
+# Local SQLite (default)
+DATABASE_URL="file:./prisma/dev.db"
+
+# Postgres
+DATABASE_URL="postgresql://user:pass@localhost:5432/bermooda"
+DATABASE_PROVIDER="postgresql"
+```
+
+The Prisma client selects `@prisma/adapter-better-sqlite3` or `@prisma/adapter-pg` from the provider. Better Auth uses the same provider. Case-insensitive filters apply `mode: 'insensitive'` only on Postgres.
+
+## CI / fresh Postgres database
+
+1. Sync the schema provider:
+
+   ```bash
+   DATABASE_PROVIDER=postgresql node scripts/sync-prisma-provider.js
+   ```
+
+2. Push schema (recommended for ephemeral CI databases):
+
+   ```bash
+   npx prisma db push
+   npx prisma generate
+   ```
+
+3. Run the app or tests against the Postgres URL.
+
+For long-lived Postgres deployments, prefer `prisma migrate deploy` once migrations have been generated against the Postgres provider.
+
+## Local Postgres (optional)
+
+Start a database and point `DATABASE_URL` at it. Keep `QUEUE_DATABASE_PATH` on SQLite unless you migrate the LiteQuu queue separately.
+
+## Single-shop platform
+
+bermooda is a **single-shop** deployment: one database, one merchant back office, one catalog. It is **not** a multi-tenant SaaS schema.
+
+**Sales channels** (`salesChannelId` on cart, checkout, and catalog) are storefront surfaces for the same shop. They are **not** tenants, separate databases, or isolated merchant accounts.
+
+<Aside type="tip">
+When you leave SQLite, configure object storage as well. See [Storage](/docs/guides/storage/) and [Deploy](/docs/deploy/).
+</Aside>

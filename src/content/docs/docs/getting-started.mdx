@@ -1,0 +1,47 @@
+---
+title: Quick start
+description: Scaffold a local bermooda shop with the CLI and open the storefront and admin.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Requires **Node.js ≥ 24**. After install, the `bermooda` binary is available globally.
+
+## Scaffold a shop
+
+```bash
+npm i -g @bermooda/cli@latest
+
+bermooda install --local --dir ./my-shop -y \
+  --admin-email admin@example.com \
+  --admin-password 'TestPass123!' \
+  --store-name 'Demo Shop'
+
+cd my-shop
+bermooda dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). Admin is at `/admin`.
+
+`--local` uses SQLite defaults so you can boot without Docker or an external database. `-y` skips prompts when you pass the admin and store flags.
+
+<Aside type="tip" title="Configuration">
+Placeholder values in `.env` are enough to boot the app. Wire real keys when you need payments, email, OAuth, or object storage. See [Configuration](/docs/configuration/).
+</Aside>
+
+## Offline install
+
+If you already have a checkout of [bermooda/bermooda](https://github.com/bermooda/bermooda), skip the network download with `--source`:
+
+```bash
+bermooda install --local --source /path/to/bermooda --dir ./my-shop -y \
+  --admin-email admin@example.com \
+  --admin-password 'TestPass123!' \
+  --store-name 'Demo Shop'
+```
+
+## Next steps
+
+- [CLI commands](/docs/cli/commands/) — flags for install, plugins, themes, and updates
+- [Configuration](/docs/configuration/) — environment variables and OAuth redirects
+- [Local development](/docs/development/) — contributing from a git checkout of the platform
