@@ -27,6 +27,210 @@ import { DOCS_URL, GITHUB_URL } from '../consts';
 			</a>
 		</div>
 
-		<a href="/#get-started" class="btn btn-primary h-10 px-4 text-sm sm:h-10"> Get Started </a>
+		<a href="/#get-started" class="btn btn-primary hidden h-10 px-4 text-sm sm:h-10 md:inline-flex">
+			Get Started
+		</a>
+
+		<button
+			id="mobile-nav-open"
+			type="button"
+			class="p-2 text-mute transition duration-100 hover:text-ink md:hidden"
+			aria-label="Open menu"
+			aria-controls="mobile-nav"
+			aria-expanded="false"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke-width="1.5"
+				stroke="currentColor"
+				class="h-6 w-6"
+				aria-hidden="true"
+			>
+				<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+				></path>
+			</svg>
+		</button>
 	</nav>
 </header>
+
+<div
+	id="mobile-nav"
+	class="fixed inset-0 z-[70] md:hidden"
+	data-open="false"
+	aria-hidden="true"
+	inert
+>
+	<div data-mobile-nav-overlay class="mobile-nav-overlay absolute inset-0 bg-ink/40 backdrop-blur-sm"></div>
+	<div
+		data-mobile-nav-panel
+		class="mobile-nav-panel absolute inset-y-0 right-0 flex h-full w-screen max-w-80 flex-col overflow-y-auto overscroll-contain bg-canvas shadow-2xl"
+		role="dialog"
+		aria-modal="true"
+		aria-label="Menu"
+	>
+		<div class="flex h-nav shrink-0 items-center justify-between border-b border-hairline px-6">
+			<a href="/" class="flex items-center" aria-label="bermooda home">
+				<img src="/logo-full.svg" alt="bermooda" class="h-5 w-auto" width="140" height="21" />
+			</a>
+			<button
+				id="mobile-nav-close"
+				type="button"
+				class="p-2 text-mute transition duration-100 hover:text-ink"
+				aria-label="Close menu"
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke-width="1.5"
+					stroke="currentColor"
+					class="h-6 w-6"
+					aria-hidden="true"
+				>
+					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
+				</svg>
+			</button>
+		</div>
+
+		<nav class="flex flex-1 flex-col px-6 py-8">
+			<a
+				href={DOCS_URL}
+				class="rounded-lg px-4 py-3 text-lg font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
+			>
+				Docs
+			</a>
+			<a
+				href={GITHUB_URL}
+				class="rounded-lg px-4 py-3 text-lg font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
+				target="_blank"
+				rel="noopener noreferrer"
+			>
+				GitHub
+			</a>
+		</nav>
+
+		<div class="mt-auto border-t border-hairline p-6">
+			<a href="/#get-started" class="btn btn-primary h-12 w-full">Get Started</a>
+		</div>
+	</div>
+</div>
+
+<script>
+	const nav = document.getElementById('mobile-nav');
+	const openBtn = document.getElementById('mobile-nav-open');
+	const closeBtn = document.getElementById('mobile-nav-close');
+	const overlay = nav?.querySelector('[data-mobile-nav-overlay]');
+
+	if (nav instanceof HTMLElement && openBtn instanceof HTMLButtonElement && closeBtn instanceof HTMLButtonElement) {
+		const menu = nav;
+		const openControl = openBtn;
+		const closeControl = closeBtn;
+		let isOpen = false;
+
+		const focusableSelector = 'a[href], button:not([disabled])';
+
+		function setOpen(open: boolean, restoreFocus = true) {
+			if (open === isOpen) return;
+			isOpen = open;
+
+			menu.dataset.open = open ? 'true' : 'false';
+			openControl.setAttribute('aria-expanded', String(open));
+			menu.setAttribute('aria-hidden', String(!open));
+			document.body.style.overflow = open ? 'hidden' : '';
+
+			if (open) {
+				menu.removeAttribute('inert');
+				closeControl.focus();
+			} else {
+				menu.setAttribute('inert', '');
+				if (restoreFocus) openControl.focus();
+			}
+		}
+
+		openControl.addEventListener('click', () => setOpen(true));
+		closeControl.addEventListener('click', () => setOpen(false));
+		overlay?.addEventListener('click', () => setOpen(false));
+
+		menu.querySelectorAll('a').forEach((link) => {
+			link.addEventListener('click', () => setOpen(false, false));
+		});
+
+		menu.addEventListener('keydown', (event) => {
+			if (!isOpen) return;
+
+			if (event.key === 'Escape') {
+				event.preventDefault();
+				setOpen(false);
+				return;
+			}
+
+			if (event.key !== 'Tab') return;
+
+			const focusable = [...menu.querySelectorAll<HTMLElement>(focusableSelector)];
+			if (focusable.length === 0) return;
+
+			const first = focusable[0];
+			const last = focusable[focusable.length - 1];
+
+			if (event.shiftKey && document.activeElement === first) {
+				event.preventDefault();
+				last.focus();
+			} else if (!event.shiftKey && document.activeElement === last) {
+				event.preventDefault();
+				first.focus();
+			}
+		});
+
+		const desktopQuery = window.matchMedia('(min-width: 768px)');
+		desktopQuery.addEventListener('change', (event) => {
+			if (event.matches) setOpen(false, false);
+		});
+	}
+</script>
+
+<style>
+	#mobile-nav {
+		pointer-events: none;
+	}
+
+	#mobile-nav[data-open='true'] {
+		pointer-events: auto;
+	}
+
+	.mobile-nav-overlay {
+		opacity: 0;
+		transition: opacity 300ms ease-out;
+	}
+
+	.mobile-nav-panel {
+		transform: translateX(100%);
+		transition: transform 300ms ease-out;
+	}
+
+	#mobile-nav[data-open='true'] .mobile-nav-overlay {
+		opacity: 1;
+	}
+
+	#mobile-nav[data-open='true'] .mobile-nav-panel {
+		transform: translateX(0);
+	}
+
+	#mobile-nav[data-open='false'] .mobile-nav-overlay {
+		transition-duration: 200ms;
+		transition-timing-function: ease-in;
+	}
+
+	#mobile-nav[data-open='false'] .mobile-nav-panel {
+		transition-duration: 200ms;
+		transition-timing-function: ease-in;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.mobile-nav-overlay,
+		.mobile-nav-panel {
+			transition: none;
+		}
+	}
+</style>
