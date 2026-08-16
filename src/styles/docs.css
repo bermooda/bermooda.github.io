@@ -64,3 +64,10 @@
 site-header {
 	backdrop-filter: blur(8px);
 }
+
+.site-title img,
+.site-title svg {
+	height: 1.25rem;
+	max-height: 1.25rem;
+	width: auto;
+}
