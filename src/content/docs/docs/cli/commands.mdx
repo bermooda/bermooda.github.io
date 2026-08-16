@@ -1,0 +1,162 @@
+---
+title: CLI commands
+description: Reference for bermooda install, update, plugin, theme, version, upgrade, start, and dev.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+All commands run as `bermooda <command> [options]`. Use `bermooda help [command]` for built-in help.
+
+| Command | What it does |
+| --- | --- |
+| `bermooda install [--local\|--server]` | Download app, install deps, configure env and DB, create admin and store |
+| `bermooda update` | Update the shop to the latest app version |
+| `bermooda plugin …` | Add, update, remove, or list plugins |
+| `bermooda theme …` | Add, update, remove, or list themes |
+| `bermooda version [--cli\|--shop]` | Show CLI and shop versions |
+| `bermooda upgrade` | Upgrade the CLI itself |
+| `bermooda start` | Run the production server (builds if needed) |
+| `bermooda dev` | Start the dev server |
+| `bermooda help [command]` | Built-in help |
+
+Global flags: `--cwd`, `-y` / `--yes`, `--json`, `--verbose`.
+
+## install
+
+Ask for local or server installation, download the app, and install dependencies.
+
+```bash
+bermooda install [--local|--server]
+```
+
+`--local` defaults to SQLite. `--server` defaults to PostgreSQL.
+
+| Flag | Description |
+| --- | --- |
+| `--local` / `--server` | Install profile (SQLite vs PostgreSQL defaults) |
+| `--dir <path>` | Target directory |
+| `--source <path>` | Local bermooda app checkout (skip network download) |
+| `--ref <tag\|branch>` | App git ref (default: latest published app) |
+| `--admin-email`, `--admin-password`, `--store-name` | Bootstrap credentials |
+| `--skip-deps`, `--skip-db` | Skip npm install or migrate/seed |
+| `--force`, `--force-env` | Non-empty directory / overwrite `.env` |
+| `--with-demo` | Include demo catalog on server installs |
+
+Non-interactive example:
+
+```bash
+bermooda install --local --dir ./my-shop -y \
+  --admin-email admin@example.com \
+  --admin-password 'TestPass123!' \
+  --store-name 'Demo Shop'
+```
+
+Offline from a local checkout:
+
+```bash
+bermooda install --local --source /path/to/bermooda --dir ./my-shop -y \
+  --admin-email admin@example.com \
+  --admin-password 'TestPass123!' \
+  --store-name 'Demo Shop'
+```
+
+## update
+
+Update the shop to the latest app version. Downloads the latest release and installs dependencies.
+
+```bash
+bermooda update
+```
+
+## plugin
+
+Manage packages under `app/plugins/*`. If no version is given, the latest is used.
+
+```bash
+bermooda plugin add <plugin-name> [version]
+bermooda plugin update <plugin-name> [version]
+bermooda plugin remove <plugin-name>
+bermooda plugin list
+bermooda plugin help
+```
+
+Default source is an npm package name:
+
+```bash
+bermooda plugin add @bermooda/plugin-subscriptions
+bermooda plugin add @bermooda/plugin-subscriptions 1.2.0
+```
+
+Alternate sources:
+
+```bash
+bermooda plugin add my-plugin --path ./packages/my-plugin
+bermooda plugin add my-plugin --git https://github.com/org/plugin.git#v1
+bermooda plugin add my-plugin --tarball https://example.com/plugin.tgz
+```
+
+## theme
+
+Manage packages under `app/themes/*`. Same add / update / remove / list / help shape as plugins.
+
+```bash
+bermooda theme add <theme-name> [version]
+bermooda theme update <theme-name> [version]
+bermooda theme remove <theme-name>
+bermooda theme list
+bermooda theme help
+```
+
+```bash
+bermooda theme add @bermooda/theme-paper
+```
+
+<Aside type="note" title="Engine range">
+Plugins and themes must declare a semver range in `package.json` under `bermooda.engine`. On add or update, the CLI compares that range to the shop `version` and rejects incompatible packages.
+</Aside>
+
+## help
+
+```bash
+bermooda help <command>
+```
+
+## version
+
+Show CLI and shop versions. With no option, both are shown.
+
+```bash
+bermooda version [--cli|--shop]
+```
+
+## upgrade
+
+Upgrade the CLI itself to the latest version.
+
+```bash
+bermooda upgrade
+```
+
+## start
+
+Start the shop in production mode (same as `npm start`). Builds first if `build/` is missing.
+
+```bash
+bermooda start
+```
+
+## dev
+
+Start the shop in development mode. Uses a plain env file (no 1Password wrapper).
+
+```bash
+bermooda dev
+```
+
+## mcp init
+
+Write Cursor MCP config for this shop (URL + bootstrap API key). See [Agents (MCP)](/docs/guides/agents/).
+
+```bash
+bermooda mcp init
+```

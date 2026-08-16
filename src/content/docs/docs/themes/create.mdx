@@ -1,0 +1,135 @@
+---
+title: Create a theme
+description: Fork the default storefront theme, register it, and activate it from admin or seed.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The simplest way to build a new theme is to copy the default theme folder and change it incrementally.
+
+## 1. Copy the default theme folder
+
+```sh
+cp -r app/themes/default app/themes/aurora
+```
+
+The new folder name must match the slug you will set in `package.json`.
+
+## 2. Update package metadata
+
+Open `app/themes/aurora/package.json`. Change `name`, `description`, `bermooda.title`, and `bermooda.slug` to match your theme. The registered id is the full package `name`, and the folder must match `bermooda.slug`.
+
+```json
+{
+  "name": "@bermooda/theme-aurora",
+  "version": "1.0.0",
+  "description": "A custom theme forked from the default.",
+  "private": true,
+  "bermooda": {
+    "title": "Aurora",
+    "slug": "aurora",
+    "engine": ">=1.0.0"
+  }
+}
+```
+
+See the [package contract](/docs/themes/package/) for every field.
+
+## 3. Update the runtime entry
+
+Open `app/themes/aurora/index.js`. Keep the component imports you want and export `defineTheme()` with a `components` map and no identity fields:
+
+```js
+import { defineTheme } from '#/core/themes/define';
+
+import CartPage from './components/cart-page';
+import CategoryPage from './components/category-page';
+import CheckoutLayout from './components/checkout-layout';
+import HomePage from './components/home-page';
+import Layout from './components/layout';
+import NotFoundPage from './components/not-found-page';
+import ProductPage from './components/product-page';
+
+export default defineTheme({
+  components: {
+    Layout,
+    HomePage,
+    ProductPage,
+    CategoryPage,
+    CartPage,
+    CheckoutLayout,
+    NotFoundPage,
+  },
+});
+```
+
+## 4. Implement required components
+
+At minimum you must implement all seven [engine-required components](/docs/themes/components/#engine-required-components). A complete storefront also needs the [route-required pages](/docs/themes/components/#route-required-components) (CMS pages, search, collections, account, thank-you). The copied files from the default theme are already valid implementations — start by editing them rather than writing from scratch.
+
+Engine-required files after the copy:
+
+```txt
+app/themes/aurora/components/layout.jsx
+app/themes/aurora/components/home-page.jsx
+app/themes/aurora/components/product-page.jsx
+app/themes/aurora/components/category-page.jsx
+app/themes/aurora/components/cart-page.jsx
+app/themes/aurora/components/checkout-layout.jsx
+app/themes/aurora/components/not-found-page.jsx
+```
+
+Optional theme-internal helpers you do not intend to customize can stay as copied from the default, or be removed from the `components` map if they are not needed.
+
+<Aside type="note" title="NotFoundPage must self-wrap">
+Theme pages wrap themselves in `Layout`. `routes/404.jsx` renders only `NotFoundPage`, so that page must include chrome the same way as other pages. See [Layout ownership](/docs/themes/components/#layout-ownership).
+</Aside>
+
+## 5. Update i18n translations (optional)
+
+To ship custom strings, edit `app/themes/aurora/i18n/en.json`. Keys follow the same format as the default theme. Add additional locale files as needed (for example `de.json`, `fr.json`).
+
+`loadMessages` merges core catalogs with the active theme slug. Changing the active theme busts the `i18n:` cache prefix.
+
+## 6. Register the theme at startup
+
+Themes under `app/themes/<slug>/` are discovered by the engine glob (`#/themes/*/index.js` plus sibling `package.json`). Bootstrap merges package identity with the `index.js` runtime export and calls `registerTheme`. You can also register a merged manifest directly during server initialization:
+
+```js
+import { mergeExtensionPackage } from '#/core/extensions/package-meta';
+import { registerTheme } from '#/core/themes/index.server';
+import auroraRuntime from '#/themes/aurora/index';
+import auroraPkg from '#/themes/aurora/package.json';
+
+registerTheme(mergeExtensionPackage(auroraPkg, auroraRuntime));
+```
+
+Both `default` and `aurora` can be registered at the same time. The active theme is determined by the database setting, not by registration order.
+
+## 7. Activate the theme
+
+### Admin UI
+
+Go to `/admin/themes`. Every registered theme is displayed as a card. Click **Activate** on the theme you want. The action calls `setActiveTheme`, which writes the full package theme `id` to `Setting.activeTheme`, invalidates in-memory theme caches, and busts the `i18n:` cache prefix so the storefront picks up the new theme (and catalogs) on the next request in that process.
+
+If admin shows a warning that the active theme id is set but no matching theme is registered, the theme was not registered at startup. Register it and restart the server.
+
+### Database seed
+
+For local development or CI, set the active theme in `prisma/seed.js`:
+
+```js
+await upsertSetting('activeTheme', '@bermooda/theme-aurora');
+```
+
+Then re-run the seed:
+
+```sh
+npx prisma db seed
+```
+
+TTL and preload caches expire within their windows. Restart the dev server to pick up the change immediately.
+
+<Aside type="caution" title="Multi-process caches">
+`resolveActiveTheme` and `preloadStorefrontTheme` use in-process TTL caches. In a multi-instance deploy, other processes lag until their TTL expires (or they restart), even though the activating process busts its own cache immediately. See [theme API notes](/docs/themes/api/#notes-and-constraints).
+</Aside>

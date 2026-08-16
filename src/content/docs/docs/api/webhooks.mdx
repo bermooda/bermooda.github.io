@@ -1,0 +1,78 @@
+---
+title: Webhooks
+description: Outbound webhook payload shape, HMAC signature verification, retry policy, and supported events.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Subscribe with an Admin key">
+Create and manage subscriptions on the Admin API (`/api/admin/v1/webhook-subscriptions`). Those routes need a key with `webhooks:write` (or `admin`). See [Authentication](/docs/api/authentication/) and [Admin webhook subscriptions](/docs/api/admin/#webhook-subscriptions).
+</Aside>
+
+bermooda POSTs domain events to each active subscription URL. Verify every delivery with HMAC-SHA256 before you act on it.
+
+## Payload
+
+Every delivery is a `POST` with `Content-Type: application/json`:
+
+```json
+{
+  "event": "order.created",
+  "data": { ... },
+  "timestamp": "2026-06-19T04:00:00.000Z"
+}
+```
+
+Additional headers: `X-Bermooda-Event`, `X-Bermooda-Delivery` (delivery id for idempotency).
+
+## Verify signatures
+
+Each request carries an `X-Bermooda-Signature: sha256=<hex>` header. Verify it by computing HMAC-SHA256 of the raw request body using your subscription secret:
+
+```js
+import { createHmac } from 'crypto';
+
+function isValid(secret, rawBody, signatureHeader) {
+  const expected =
+    'sha256=' + createHmac('sha256', secret).update(rawBody).digest('hex');
+  return signatureHeader === expected;
+}
+```
+
+Use the raw body bytes, not a re-serialized JSON object. Compare the header to the expected `sha256=` hex digest before handling the event.
+
+## Retry policy
+
+Failed deliveries are retried with exponential back-off:
+
+| Attempt | Delay |
+| ------- | ----- |
+| 1st retry | 30 seconds |
+| 2nd retry | 2 minutes |
+| 3rd retry | 10 minutes |
+| 4th retry | 30 minutes |
+| 5th retry (final) | 2 hours |
+
+After 5 failed attempts the delivery is marked `failed` and no further retries are made.
+
+## Supported events
+
+| Event | Emitted when |
+| ----- | ------------ |
+| `order.created` | A new order is placed |
+| `order.confirmed` | Payment confirmed, order moves to `confirmed` |
+| `order.cancelled` | Order cancelled |
+| `shipment.created` | A shipment is added to an order |
+| `shipment.shipped` | Shipment marked as shipped |
+| `shipment.delivered` | Shipment marked as delivered |
+| `payment.succeeded` | Payment provider webhook confirms success |
+| `payment.failed` | Payment provider webhook reports failure |
+| `payment.refunded` | A refund is created |
+
+Use `"*"` in the subscription `events` array to receive all domain events.
+
+## Related
+
+- [Admin webhook subscriptions](/docs/api/admin/#webhook-subscriptions)
+- [Authentication](/docs/api/authentication/)
+- [REST API overview](/docs/api/)

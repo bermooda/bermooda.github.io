@@ -1,0 +1,79 @@
+---
+title: Local development
+description: Work from a git checkout of bermooda — setup, scripts, architecture, and contributing.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Use a git checkout of [bermooda/bermooda](https://github.com/bermooda/bermooda) when you are contributing to the platform itself. To scaffold a merchant shop from the published app, use [`bermooda install`](/docs/getting-started/) instead.
+
+## Setup
+
+```bash
+npm install
+npm run setup          # .env + config + prisma generate/migrate + default theme
+npm run seed           # optional demo catalog + admin
+```
+
+`npm run setup` creates `.env` from `.env.example` when missing, generates Prisma clients, applies migrations, and installs the default theme.
+
+## Development server
+
+```bash
+# Default local script (wraps env with 1Password CLI if you use it):
+npm run dev
+
+# Plain env file (no 1Password):
+npx react-router dev --port 3000 --host
+# or, with the CLI installed:
+bermooda dev
+```
+
+App: [http://localhost:3000](http://localhost:3000). Admin is at `/admin`.
+
+## Common scripts
+
+| Task | Command |
+| --- | --- |
+| Full local setup | `npm run setup` |
+| Seed demo data | `npm run seed` |
+| Install default theme | `npm run extensions:install` |
+| Install extension deps | `npm run extensions:install-deps` |
+| Tests | `npm run test` |
+| Lint | `npm run lint` |
+| Format | `npm run fmt` |
+| Production build | `npm run build` |
+| New migration | `npm run prisma:migrate -- --name <name>` |
+
+## Architecture at a glance
+
+```
+app/
+  core/       # Domain workflows (catalog, cart, orders, payments, …)
+  libs/       # Infrastructure (auth, Prisma, queue, alerting, SDKs)
+  routes/     # Storefront, admin, API, webhooks, auth
+  themes/     # Storefront themes (active theme renders the shop)
+  plugins/    # Hook-based extensions (blocks, admin pages, providers)
+  components/ # Shared admin / auth / UI primitives
+```
+
+- **Routes** stay thin: loaders and actions call `app/core/*`.
+- **Themes** receive data via props and loaders; they do not import server core modules.
+- **Plugins** register hooks, providers, and optional admin/storefront UI.
+
+## Reset local SQLite
+
+Delete `prisma/dev.db` and re-run `npm run setup`.
+
+<Aside type="tip">
+For a production-shaped database locally, point `DATABASE_URL` at PostgreSQL. See [PostgreSQL](/docs/guides/postgres/).
+</Aside>
+
+## Contributing
+
+Issues and pull requests that improve the commerce core, themes, plugins, docs, or developer experience are welcome. Prefer small, focused changes that match patterns in nearby files.
+
+```bash
+npm run test
+npm run lint
+```

@@ -1,0 +1,49 @@
+---
+title: Deploy
+description: Build and run bermooda in production with Node or Docker, then move off SQLite.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+bermooda is a **single-shop** deployment: one database, one merchant back office, one catalog. It is not a multi-tenant SaaS. Sales channels are storefront surfaces for the same shop — not separate tenants.
+
+## Build and start
+
+```bash
+npm run build
+npm start   # or: bermooda start
+```
+
+`bermooda start` runs the production server and builds first if `build/` is missing.
+
+Build output:
+
+```
+build/
+  client/   # Static assets
+  server/   # Server bundle
+```
+
+## Docker
+
+```bash
+docker build -t bermooda .
+docker run -p 3000:3000 bermooda
+
+# With env file and SQLite path (example):
+docker run -p 3000:3000 --env-file .env \
+  -e DATABASE_URL=file:/data/sqlite.db bermooda
+```
+
+The image listens on port **3000**. Persist `/data` if you keep SQLite inside the container.
+
+## Leaving SQLite
+
+SQLite is fine for local development. For production, use PostgreSQL and S3-compatible object storage:
+
+- [PostgreSQL](/docs/guides/postgres/) — `DATABASE_URL`, `DATABASE_PROVIDER`, and migrations
+- [Storage](/docs/guides/storage/) — media uploads, public URLs, and MinIO for local testing
+
+<Aside type="caution">
+Set a strong `BETTER_AUTH_SECRET` in production. It signs sessions and encrypts plugin password settings at rest. See [Configuration](/docs/configuration/).
+</Aside>

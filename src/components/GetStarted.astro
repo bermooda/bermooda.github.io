@@ -1,5 +1,5 @@
 ---
-import { GITHUB_URL } from '../consts';
+import { DOCS_URL } from '../consts';
 import CodeWindow from './CodeWindow.astro';
 
 const quickStartHtml = `<span class="text-white/40"># Install the CLI</span>
@@ -28,8 +28,8 @@ const steps = [
 					Scaffold a shop in minutes
 				</h2>
 				<p class="mt-4 max-w-copy text-body text-mute">
-					Install the CLI, create a local shop, and run the dev server. Full flags and design notes live in
-					the repository README.
+					Install the CLI, create a local shop, and run the dev server. Full flags and setup notes live in
+					the docs.
 				</p>
 				<ol class="mt-8 space-y-5">
 					{
@@ -45,12 +45,10 @@ const steps = [
 					}
 				</ol>
 				<a
-					href={GITHUB_URL}
+					href={`${DOCS_URL}/getting-started`}
 					class="mt-8 inline-flex text-[15px] font-medium tracking-tight text-accent transition duration-100 hover:text-accent-hover"
-					target="_blank"
-					rel="noopener noreferrer"
 				>
-					Read the docs on GitHub →
+					Read the docs →
 				</a>
 			</div>
 

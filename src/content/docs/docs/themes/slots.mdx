@@ -1,0 +1,72 @@
+---
+title: Theme slots
+description: Named storefront injection points, SlotBlocks rendering, and loadStorefrontPageContext.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Slots are named injection points in the storefront layout where [plugins contribute UI blocks](/docs/plugins/blocks/). The full list of well-known slot names is exported as `SLOT_NAMES` from `app/core/themes/index.server.js`.
+
+## SLOT_NAMES
+
+| Slot name | Location in the storefront |
+| --- | --- |
+| `home.hero` | Hero area at the top of the home page, above main content |
+| `home.featured` | Featured section on the home page, below the hero |
+| `product.afterDescription` | Below the product description on the product detail page |
+| `product.sidebar` | Sidebar column on the product detail page |
+| `category.top` | Above the product grid on category listing pages |
+| `cart.summary` | Inside the cart summary panel |
+| `checkout.afterPayment` | Below the payment fields in the checkout flow |
+| `account.dashboard` | Inside the customer account dashboard |
+| `layout.header` | Inside the global site header (rendered by theme `Layout`) |
+| `layout.footer` | Inside the global site footer (rendered by theme `Layout`) |
+
+The default theme renders all 10 of these slots. Route loaders fetch blocks server-side and pass a `slotBlocks` map into the theme component or shell that owns the slot. Storefront `_layout.jsx` loads `layout.header` and `layout.footer` for theme chrome; page-owned slots are loaded in the corresponding page loaders.
+
+<Aside type="tip" title="Contributing blocks">
+Plugins register React components in `manifest.blocks` keyed by these slot names. Files under a plugin `blocks/` folder are not auto-discovered. See [plugin storefront slots](/docs/plugins/blocks/).
+</Aside>
+
+## Rendering slot blocks
+
+Themes render slots by calling `getSlotBlocks(slotName)` or `getSlotBlocksMap(slotNames)` and mounting each returned `{ pluginId, component }` entry. The shared `SlotBlocks` component in `app/components/slot-blocks/index.jsx` accepts optional `slotProps`, which are spread into every plugin block so blocks can receive page-specific data like `product`, `cart`, `category`, or checkout state.
+
+```jsx
+import SlotBlocks from '#/components/slot-blocks';
+
+<SlotBlocks
+  blocks={slotBlocks['product.afterDescription']}
+  slotProps={{ product, locale, currency }}
+/>
+```
+
+Blocks only render when the contributing plugin is enabled. Order follows `pluginOrder ∩ enabledPlugins`. See [getSlotBlocks](/docs/themes/api/#getslotblocks) and [getSlotBlocksMap](/docs/themes/api/#getslotblocksmap) in the theme API.
+
+## Page context
+
+Prefer `loadStorefrontPageContext(request)` from `#/core/storefront/page-context.server`. It returns `{ themeId, locale, currency, themeSettings }` by resolving the active theme (`preloadStorefrontTheme`), request locale, and request currency in parallel, then loading persisted settings for the active theme manifest (`loadThemeSettings`). When the theme has no settings schema (or is unregistered), `themeSettings` is `{}`.
+
+Pass `themeId` into `getStorefrontComponent(name, themeId)`. Pass `themeSettings` (and other loader fields) as props to the theme page component. Do not resolve the active theme again in the route component.
+
+```js
+import { loadStorefrontPageContext } from '#/core/storefront/page-context.server';
+import { getStorefrontComponent } from '#/core/themes/storefront-components';
+
+export async function loader({ request }) {
+  const { themeId, locale, currency, themeSettings } =
+    await loadStorefrontPageContext(request);
+  return { themeId, locale, currency, themeSettings /* … */ };
+}
+
+export default function SomeRoute() {
+  const { themeId, ...data } = useLoaderData();
+  const HomePage = getStorefrontComponent('HomePage', themeId);
+  if (!HomePage) throw new Error('HomePage theme component not found');
+  return <HomePage {...data} />;
+}
+```
+
+<Aside type="note">
+`getStorefrontComponent` is client-safe and **sync**. Callers must pass `themeId` from loader data. There is no silent fallback to the first registered theme.
+</Aside>

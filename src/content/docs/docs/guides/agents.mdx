@@ -1,0 +1,86 @@
+---
+title: Agents (MCP)
+description: Connect Cursor or Claude to a bermooda shop with MCP, the Admin REST API, and the CLI.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**MCP is the primary agent surface** for Cursor, Claude, and similar tools. The **Admin REST API** is the contract those tools call. The **CLI** is for install and lifecycle — not day-to-day catalog work.
+
+You want all three in layers, not a single winner.
+
+## Architecture
+
+| Surface | Role |
+| --- | --- |
+| **Admin REST API** (`/api/admin/v1`) | Source of truth for read/write shop ops |
+| **MCP server** (`@bermooda/mcp`) | Agent UX: typed tools, auth, discovery in Cursor and Claude |
+| **CLI** (`@bermooda/cli`) | Install, update, plugins, themes, local bootstrap |
+
+Agents talk to MCP with native tools. MCP calls the Admin API over HTTP with a `berm_` key. The CLI seeds the app and writes bootstrap credentials so MCP can connect. Domain workflows stay in `app/core/*` — MCP does not import Prisma or core modules.
+
+```
+agents ──native tools──► MCP ──HTTP Bearer berm_ key──► Admin REST API ──► app/core
+   │
+   └──shell (install only)──► CLI ──seed / bootstrap──► app/core
+```
+
+CLI-as-primary is brittle: agents would shell out, scrape stdout, and invent flags. MCP-only cannot install a shop that is not running yet. A proprietary agent protocol is unnecessary — MCP is what those clients already speak.
+
+<Aside type="caution">
+Do not put ecommerce domain logic in MCP or the CLI. Call the Admin API (or MCP tools that wrap it). Do not replace REST with MCP-only access — humans, scripts, and integrations still need HTTP.
+</Aside>
+
+## Quick path
+
+1. Install with [@bermooda/cli](https://github.com/bermooda/cli) (`bermooda install`).
+2. Run `bermooda mcp init` in the shop (uses the bootstrap key / `.env`).
+3. Use [@bermooda/mcp](https://github.com/bermooda/mcp) from Cursor or Claude Desktop.
+
+Install stays on the CLI. After an API key exists, configuration and catalog work become MCP-native.
+
+## Config
+
+```json
+{
+  "mcpServers": {
+    "bermooda": {
+      "command": "npx",
+      "args": ["-y", "@bermooda/mcp"],
+      "env": {
+        "BERMOODA_URL": "http://localhost:3000",
+        "BERMOODA_API_KEY": "berm_REPLACE_ME"
+      }
+    }
+  }
+}
+```
+
+Optional hosted transport: `@bermooda/mcp` `npm run start:http` (Streamable HTTP) when stdio is not available.
+
+Seed and CLI bootstrap print a `berm_` key when none exist, write `.bermooda/bootstrap-api-key`, and can update `.env`. `POST /api/admin/v1/setup*` can create the first admin and first API key with `SETUP_TOKEN` when you are not using the CLI path.
+
+## First agent tasks
+
+- `ping` — verify URL and key
+- `setup_shop` with `dryRun=true`, then `confirm=true` — name, currencies, shipping, sample categories and products
+- `list_products` / `upsert_product` for catalog work
+
+Destructive tools expect an explicit confirm argument. Prefer dry-run flags on bulk operations.
+
+## What MCP wraps
+
+MCP is a thin facade over `/api/admin/v1`. Tools are grouped by intent, not one-to-one with every REST route. The same API also covers:
+
+- Settings, products, categories, orders, discounts, CSV import
+- Themes and plugins (list and activate)
+- Media upload, inventory levels, webhooks
+- Reports (overview, sales, ops, customers, inventory, exports)
+
+API keys support granular scopes (`products:write`, and so on) with `admin` as a super-scope. Admin API mutations are audited with `actorType: api_key`.
+
+## Related
+
+- [CLI overview](/docs/cli/) — lifecycle commands and `mcp init`
+- [REST API](/docs/api/) — the Admin contract MCP calls
+- [API authentication](/docs/api/authentication/) — `berm_` keys and scopes

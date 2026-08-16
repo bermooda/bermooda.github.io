@@ -1,0 +1,53 @@
+---
+title: CLI
+description: Scaffold and manage a bermooda shop with @bermooda/cli — install, update, plugins, and themes.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The official CLI is **`@bermooda/cli`**. The binary is **`bermooda`**. It lives in a [standalone repository](https://github.com/bermooda/cli).
+
+On `install`, the CLI downloads the shop app from [bermooda/bermooda](https://github.com/bermooda/bermooda) (unless you pass `--source`).
+
+## Install
+
+```bash
+npm i -g @bermooda/cli@latest
+```
+
+Requires **Node.js ≥ 24**. After install, `bermooda` is available globally.
+
+## What the CLI is for
+
+The CLI is **lifecycle**, not a catalog REPL:
+
+| Surface | Role |
+| --- | --- |
+| CLI | Install, update, plugins, themes, local bootstrap |
+| Admin REST API | Source of truth for read/write shop operations |
+| MCP | Agent UX over that same Admin API |
+
+Day-to-day catalog, settings, and order work belongs on the [Admin REST API](/docs/api/) (or [MCP tools](/docs/guides/agents/) that wrap it). Do not put ecommerce domain logic in the CLI.
+
+<Aside type="tip">
+`bermooda mcp init` writes Cursor MCP config for a running shop. See [Agents (MCP)](/docs/guides/agents/).
+</Aside>
+
+## Quick path
+
+```bash
+bermooda install --local --dir ./my-shop -y \
+  --admin-email admin@example.com \
+  --admin-password 'TestPass123!' \
+  --store-name 'Demo Shop'
+
+cd my-shop
+bermooda dev
+```
+
+Global flags on most commands: `--cwd`, `-y` / `--yes`, `--json`, `--verbose`.
+
+## Next steps
+
+- [Commands](/docs/cli/commands/) — install flags, plugins, themes, start, and version
+- [Agents (MCP)](/docs/guides/agents/) — connect Cursor or Claude to a running shop
