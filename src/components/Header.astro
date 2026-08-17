@@ -1,5 +1,5 @@
 ---
-import { DOCS_URL, GITHUB_URL } from '../consts';
+import { CLI_URL, DOCS_URL, GITHUB_URL } from '../consts';
 ---
 
 <header
@@ -14,12 +14,18 @@ import { DOCS_URL, GITHUB_URL } from '../consts';
 		<div class="hidden items-center gap-1 md:flex">
 			<a
 				href={DOCS_URL}
-				class="rounded-lg px-3 py-1.5 text-[15px] font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
+				class="rounded-lg px-3 py-1.5 font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
 				>Docs</a
 			>
 			<a
+				href={CLI_URL}
+				class="rounded-lg px-3 py-1.5 font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
+			>
+				CLI
+			</a>
+			<a
 				href={GITHUB_URL}
-				class="rounded-lg px-3 py-1.5 text-[15px] font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
+				class="rounded-lg px-3 py-1.5 font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
 				target="_blank"
 				rel="noopener noreferrer"
 			>
@@ -27,7 +33,7 @@ import { DOCS_URL, GITHUB_URL } from '../consts';
 			</a>
 		</div>
 
-		<a href="/#get-started" class="btn btn-primary hidden h-10 px-4 text-sm sm:h-10 md:inline-flex">
+		<a href="/#get-started" class="btn btn-primary hidden h-10 px-4 sm:h-10 md:inline-flex">
 			Get Started
 		</a>
 
@@ -57,7 +63,7 @@ import { DOCS_URL, GITHUB_URL } from '../consts';
 
 <div
 	id="mobile-nav"
-	class="fixed inset-0 z-[70] md:hidden"
+	class="fixed inset-0 z-70 md:hidden"
 	data-open="false"
 	aria-hidden="true"
 	inert
@@ -97,13 +103,19 @@ import { DOCS_URL, GITHUB_URL } from '../consts';
 		<nav class="flex flex-1 flex-col px-6 py-8">
 			<a
 				href={DOCS_URL}
-				class="rounded-lg px-4 py-3 text-lg font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
+				class="rounded-lg px-4 py-3 text-xl font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
 			>
 				Docs
 			</a>
 			<a
+				href={CLI_URL}
+				class="rounded-lg px-4 py-3 text-xl font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
+			>
+				CLI
+			</a>
+			<a
 				href={GITHUB_URL}
-				class="rounded-lg px-4 py-3 text-lg font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
+				class="rounded-lg px-4 py-3 text-xl font-medium tracking-tight text-ink transition duration-100 hover:bg-accent/5"
 				target="_blank"
 				rel="noopener noreferrer"
 			>
@@ -112,7 +124,7 @@ import { DOCS_URL, GITHUB_URL } from '../consts';
 		</nav>
 
 		<div class="mt-auto border-t border-hairline p-6">
-			<a href="/#get-started" class="btn btn-primary h-12 w-full">Get Started</a>
+			<a href="/#get-started" class="btn btn-primary h-12 w-full text-lg">Get Started</a>
 		</div>
 	</div>
 </div>
