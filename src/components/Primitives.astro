@@ -1,6 +1,7 @@
 ---
 import BrowserChrome from './BrowserChrome.astro';
-import Checkout from './mockups/Checkout.astro';
+import Screenshot from './Screenshot.astro';
+import checkout from '../assets/screens/checkout.png';
 
 const primitives = [
 	'Catalog',
@@ -47,7 +48,11 @@ const primitives = [
 
 		<div class="mt-10 min-w-0">
 			<BrowserChrome url="localhost:3000/checkout" label="checkout">
-				<Checkout />
+				<Screenshot
+					src={checkout}
+					alt="bermooda checkout with contact and delivery forms next to the order summary"
+					sizes="(min-width: 1216px) 1168px, calc(100vw - 2rem)"
+				/>
 			</BrowserChrome>
 		</div>
 	</div>

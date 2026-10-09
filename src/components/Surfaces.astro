@@ -1,8 +1,9 @@
 ---
 import BrowserChrome from './BrowserChrome.astro';
 import CodeWindow from './CodeWindow.astro';
-import Admin from './mockups/Admin.astro';
-import Storefront from './mockups/Storefront.astro';
+import Screenshot from './Screenshot.astro';
+import adminDashboard from '../assets/screens/admin-dashboard.png';
+import arrivals from '../assets/screens/arrivals.jpg';
 
 const catalogHtml = `<span class="text-white/40">curl</span> http://localhost:3000/api/v1/catalog
 <span class="text-emerald-300/90">{ "products": […], "total": 42, "page": 1 }</span>`;
@@ -28,11 +29,19 @@ const catalogHtml = `<span class="text-white/40">curl</span> http://localhost:30
 
 		<div class="mt-14 grid min-w-0 items-start gap-6 lg:grid-cols-2">
 			<BrowserChrome url="localhost:3000" label="storefront">
-				<Storefront />
+				<Screenshot
+					src={arrivals}
+					alt="bermooda storefront product grid with demo homeware products"
+					sizes="(min-width: 1024px) 572px, calc(100vw - 2rem)"
+				/>
 			</BrowserChrome>
 			<div class="space-y-6">
 				<BrowserChrome url="localhost:3000/admin" label="admin">
-					<Admin />
+					<Screenshot
+						src={adminDashboard}
+						alt="bermooda admin dashboard with store totals and recent orders"
+						sizes="(min-width: 1024px) 572px, calc(100vw - 2rem)"
+					/>
 				</BrowserChrome>
 				<CodeWindow title="GET /api/v1/catalog" meta="storefront API" html={catalogHtml} />
 			</div>
