@@ -1,0 +1,13 @@
+{
+  "name": "bermooda-homepage-screenshots",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "demo-data": "node demo-data.mjs",
+    "capture": "node capture.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "playwright-core": "^1.64.0"
+  }
+}
