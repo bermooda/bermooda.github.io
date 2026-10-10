@@ -1,0 +1,64 @@
+---
+const capabilities = [
+	{
+		cmd: 'install',
+		title: 'Scaffold a shop',
+		body: 'Downloads the app, installs deps, writes .env and bermooda.config.js, migrates the database, and creates your admin and store.',
+	},
+	{
+		cmd: 'dev · start',
+		title: 'Run it',
+		body: 'dev serves storefront, admin, and API on port 3000. start runs production and builds first if build/ is missing.',
+	},
+	{
+		cmd: 'update',
+		title: 'Stay current',
+		body: 'Fast-forwards a git checkout or merges core paths from the latest release, then reinstalls and migrates.',
+	},
+	{
+		cmd: 'theme',
+		title: 'Swap the storefront',
+		body: 'Add, update, remove, or list themes from npm, a local path, git, or a tarball. --activate switches to it.',
+	},
+	{
+		cmd: 'plugin',
+		title: 'Hook the engine',
+		body: 'Same shape as themes. --enable turns a plugin on in shop settings the moment it lands.',
+	},
+	{
+		cmd: 'mcp init',
+		title: 'Hand it to an agent',
+		body: 'Writes .cursor/mcp.json with your shop URL and bootstrap API key, so Cursor or Claude can drive the Admin API.',
+	},
+];
+---
+
+<section id="capabilities" class="border-t border-hairline bg-canvas" aria-labelledby="capabilities-heading">
+	<div class="mx-auto max-w-page px-4 py-band sm:px-6">
+		<div class="max-w-copy">
+			<p class="eyebrow">What it does</p>
+			<h2 id="capabilities-heading" class="mt-3 text-band font-medium text-pretty text-ink">
+				Lifecycle in your terminal.
+			</h2>
+			<p class="mt-4 text-body text-mute">
+				The CLI owns the parts of running a shop that happen outside the admin: setup, upgrades,
+				extensions, and wiring up agents. Catalog, settings, and orders stay in the admin and the{' '}
+				<a href="/docs/api" class="text-ink underline decoration-hairline underline-offset-4 hover:decoration-accent"
+					>Admin REST API</a
+				>.
+			</p>
+		</div>
+
+		<ul class="mt-12 grid gap-px overflow-hidden rounded-xl border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-3">
+			{
+				capabilities.map((item) => (
+					<li class="flex flex-col bg-canvas p-6 transition duration-150 hover:bg-soft">
+						<code class="font-mono text-[12px] text-accent">bermooda {item.cmd}</code>
+						<p class="mt-3 text-lg font-medium tracking-tight text-ink">{item.title}</p>
+						<p class="mt-1.5 text-sm text-mute">{item.body}</p>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</section>

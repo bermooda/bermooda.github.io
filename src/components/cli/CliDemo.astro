@@ -1,0 +1,246 @@
+---
+// Tabbed terminal that replays real `bermooda` command output. Each line fades in
+// when its tab becomes visible; tabs auto-advance until the visitor picks one.
+const ok = '<span class="text-emerald-300">✔</span>';
+const inf = '<span class="text-sky-300">ℹ</span>';
+const $ = '<span class="text-accent">$</span>';
+const dim = (s: string) => `<span class="text-white/40">${s}</span>`;
+
+const demos = [
+	{
+		id: 'install',
+		label: 'install',
+		lines: [
+			`${$} bermooda install --local --dir ./my-shop -y`,
+			dim('┌  bermooda install'),
+			`${inf} Downloading bermooda@latest from npm…`,
+			`${ok} App source ready (npm, ref bermooda@0.13.0)`,
+			`${ok} Dependencies installed`,
+			`${ok} Wrote .env`,
+			`${ok} Wrote bermooda.config.js`,
+			`${ok} Database ready`,
+			`${ok} Admin user and store configured`,
+			`${inf} Installing default theme and plugins…`,
+			`${dim('└')}  Shop ready at ~/my-shop`,
+		],
+	},
+	{
+		id: 'dev',
+		label: 'dev',
+		lines: [
+			`${$} cd my-shop && bermooda dev`,
+			`${inf} Starting dev server in ~/my-shop (port 3000)…`,
+			'',
+			`<span class="text-emerald-300/90">Storefront  http://localhost:3000</span>`,
+			`<span class="text-emerald-300/90">Admin       http://localhost:3000/admin</span>`,
+			`<span class="text-emerald-300/90">API         http://localhost:3000/api/v1</span>`,
+		],
+	},
+	{
+		id: 'theme',
+		label: 'theme',
+		lines: [
+			`${$} bermooda theme add @bermooda/theme-paper --activate`,
+			`${ok} Installed theme "paper" → app/themes/paper`,
+			`${$} bermooda theme list`,
+			'default @ 1.0.0',
+			'paper @ 1.0.0',
+			dim('# active theme switched, no core files touched'),
+		],
+	},
+	{
+		id: 'plugin',
+		label: 'plugin',
+		lines: [
+			`${$} bermooda plugin add @bermooda/plugin-resend --enable`,
+			`${inf} Merging 1 dependency into shop package.json`,
+			`${ok} Installed plugin "resend" → app/plugins/resend`,
+			`${$} bermooda plugin list`,
+			'meilisearch @ 1.0.0',
+			'resend @ 1.0.0',
+		],
+	},
+	{
+		id: 'update',
+		label: 'update',
+		lines: [
+			`${$} bermooda update`,
+			`${inf} Updating shop at ~/my-shop → v0.14.0`,
+			`${inf} Previous sourceRef: bermooda@0.13.0`,
+			`${inf} Non-git shop: downloading app release and merging core paths…`,
+			`${ok} Tarball merge complete (412 paths, source v0.14.0)`,
+			`${inf} Installing dependencies…`,
+			`${ok} Database ready`,
+			`${ok} Shop updated to v0.14.0`,
+		],
+	},
+	{
+		id: 'mcp',
+		label: 'mcp',
+		lines: [
+			`${$} bermooda mcp init`,
+			`${ok} Wrote MCP config to ~/my-shop/.cursor/mcp.json`,
+			'',
+			dim('# your agent now talks to the Admin API'),
+			dim('# with the shop URL and bootstrap key'),
+		],
+	},
+];
+---
+
+<div
+	class="cli-demo w-full min-w-0 overflow-hidden rounded-xl bg-ink-strong text-left shadow-mock"
+	data-cli-demo
+>
+	<div class="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
+		<span class="size-2.5 shrink-0 rounded-full bg-[#FF5F57]"></span>
+		<span class="size-2.5 shrink-0 rounded-full bg-[#FEBC2E]"></span>
+		<span class="size-2.5 shrink-0 rounded-full bg-[#28C840]"></span>
+		<span class="ml-2 font-mono text-[11px] text-white/45">~/my-shop</span>
+		<span class="ml-auto font-mono text-[11px] text-white/35">@bermooda/cli</span>
+	</div>
+
+	<div
+		class="flex gap-1 overflow-x-auto border-b border-white/10 px-2 py-1.5 [scrollbar-width:none]"
+		role="tablist"
+		aria-label="CLI commands"
+	>
+		{
+			demos.map((demo, i) => (
+				<button
+					type="button"
+					role="tab"
+					id={`cli-tab-${demo.id}`}
+					aria-controls={`cli-panel-${demo.id}`}
+					aria-selected={i === 0 ? 'true' : 'false'}
+					tabindex={i === 0 ? 0 : -1}
+					class="cli-tab shrink-0 rounded-md px-2.5 py-1 font-mono text-[12px] text-white/50 transition duration-100 hover:text-white/80"
+				>
+					{demo.label}
+				</button>
+			))
+		}
+	</div>
+
+	<div class="relative h-[19rem] sm:h-[18rem]">
+		{
+			demos.map((demo, i) => (
+				<div
+					role="tabpanel"
+					id={`cli-panel-${demo.id}`}
+					aria-labelledby={`cli-tab-${demo.id}`}
+					hidden={i !== 0}
+					class="cli-panel absolute inset-0 overflow-auto"
+				>
+					<div class="w-max min-w-full p-4 font-mono text-[12.5px] leading-relaxed text-white/90 sm:p-5 sm:text-sm">
+						{demo.lines.map((line, n) => (
+							<div class="cli-line min-h-[1lh] whitespace-pre" style={`--i:${n}`} set:html={line} />
+						))}
+					</div>
+				</div>
+			))
+		}
+	</div>
+</div>
+
+<script>
+	document.querySelectorAll<HTMLElement>('[data-cli-demo]').forEach((root) => {
+		const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+		const panels = [...root.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		let current = 0;
+		let timer: number | undefined;
+		let paused = false;
+
+		function select(index: number, focus = false) {
+			current = (index + tabs.length) % tabs.length;
+			tabs.forEach((tab, i) => {
+				const active = i === current;
+				tab.setAttribute('aria-selected', String(active));
+				tab.tabIndex = active ? 0 : -1;
+			});
+			panels.forEach((panel, i) => {
+				panel.hidden = i !== current;
+			});
+			if (focus) tabs[current].focus();
+			tabs[current].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+		}
+
+		function stop() {
+			window.clearInterval(timer);
+			timer = undefined;
+		}
+
+		function start() {
+			if (reduceMotion || timer !== undefined) return;
+			timer = window.setInterval(() => {
+				if (!paused && !document.hidden) select(current + 1);
+			}, 5200);
+		}
+
+		tabs.forEach((tab, i) => {
+			tab.addEventListener('click', () => {
+				stop();
+				select(i);
+			});
+			tab.addEventListener('keydown', (event) => {
+				const keys: Record<string, number> = {
+					ArrowRight: current + 1,
+					ArrowLeft: current - 1,
+					Home: 0,
+					End: tabs.length - 1,
+				};
+				if (!(event.key in keys)) return;
+				event.preventDefault();
+				stop();
+				select(keys[event.key], true);
+			});
+		});
+
+		root.addEventListener('mouseenter', () => (paused = true));
+		root.addEventListener('mouseleave', () => (paused = false));
+		root.addEventListener('focusin', () => (paused = true));
+		root.addEventListener('focusout', () => (paused = false));
+
+		// Only start cycling once the terminal is on screen.
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries.some((entry) => entry.isIntersecting)) {
+					start();
+					observer.disconnect();
+				}
+			},
+			{ threshold: 0.4 },
+		);
+		observer.observe(root);
+	});
+</script>
+
+<style>
+	.cli-tab[aria-selected='true'] {
+		background: rgb(255 255 255 / 0.08);
+		color: rgb(255 255 255 / 0.95);
+	}
+
+	.cli-line {
+		animation: cli-line-in 0.35s ease-out both;
+		animation-delay: calc(var(--i) * 110ms + 150ms);
+	}
+
+	@keyframes cli-line-in {
+		from {
+			opacity: 0;
+			transform: translateY(3px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cli-line {
+			animation: none;
+		}
+	}
+</style>

@@ -1,5 +1,5 @@
 ---
-import { CLI_URL, DOCS_URL, GITHUB_URL } from '../consts';
+import { CLI_REPO_URL, CLI_URL, DOCS_URL, GITHUB_URL } from '../consts';
 
 const year = new Date().getFullYear();
 
@@ -13,6 +13,7 @@ const columns: FooterColumn[] = [
 			{ href: '/#surfaces', label: 'Surfaces' },
 			{ href: '/#primitives', label: 'Primitives' },
 			{ href: '/#themes', label: 'Themes & Plugins' },
+			{ href: CLI_URL, label: 'CLI' },
 			{ href: '/#get-started', label: 'Get started' },
 		],
 	},
@@ -29,7 +30,7 @@ const columns: FooterColumn[] = [
 		label: 'Source',
 		links: [
 			{ href: GITHUB_URL, label: 'GitHub', external: true },
-			{ href: CLI_URL, label: 'CLI', external: true },
+			{ href: CLI_REPO_URL, label: 'CLI', external: true },
 			{ href: `${GITHUB_URL}/issues`, label: 'Issues', external: true },
 		],
 	},
