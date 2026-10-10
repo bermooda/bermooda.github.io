@@ -1,0 +1,41 @@
+---
+import Announcement from '../components/Announcement.astro';
+import BaseHead from '../components/BaseHead.astro';
+import CliAgents from '../components/cli/CliAgents.astro';
+import CliCapabilities from '../components/cli/CliCapabilities.astro';
+import CliCta from '../components/cli/CliCta.astro';
+import CliExtensions from '../components/cli/CliExtensions.astro';
+import CliHero from '../components/cli/CliHero.astro';
+import CliInstall from '../components/cli/CliInstall.astro';
+import CliReference from '../components/cli/CliReference.astro';
+import CliUpdate from '../components/cli/CliUpdate.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead
+			title="CLI"
+			description="@bermooda/cli installs, runs, updates, and extends a bermooda shop. Themes, plugins, and MCP setup from one binary."
+		/>
+	</head>
+	<body class="relative flex min-h-screen flex-col">
+		<div class="page-grain pointer-events-none fixed inset-0 z-[60] opacity-[0.04] mix-blend-multiply" aria-hidden="true"
+		></div>
+		<Announcement />
+		<Header />
+		<main class="flex-1">
+			<CliHero />
+			<CliCapabilities />
+			<CliInstall />
+			<CliExtensions />
+			<CliUpdate />
+			<CliAgents />
+			<CliReference />
+			<CliCta />
+		</main>
+		<Footer />
+	</body>
+</html>

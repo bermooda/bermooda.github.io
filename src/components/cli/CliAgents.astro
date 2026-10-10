@@ -1,0 +1,83 @@
+---
+import CodeWindow from '../CodeWindow.astro';
+
+const mcpHtml = `{
+  <span class="text-sky-300">"mcpServers"</span>: {
+    <span class="text-sky-300">"bermooda"</span>: {
+      <span class="text-sky-300">"command"</span>: <span class="text-emerald-300">"npx"</span>,
+      <span class="text-sky-300">"args"</span>: [<span class="text-emerald-300">"-y"</span>, <span class="text-emerald-300">"bermooda-mcp"</span>],
+      <span class="text-sky-300">"env"</span>: {
+        <span class="text-sky-300">"BERMOODA_URL"</span>: <span class="text-emerald-300">"http://localhost:3000"</span>,
+        <span class="text-sky-300">"BERMOODA_API_KEY"</span>: <span class="text-emerald-300">"berm_…"</span>
+      }
+    }
+  }
+}`;
+
+const exitCodes = [
+	{ code: '0', meaning: 'Success' },
+	{ code: '1', meaning: 'User or project error' },
+	{ code: '2', meaning: 'Network or download' },
+	{ code: '3', meaning: 'Dependency install' },
+	{ code: '4', meaning: 'Database or bootstrap' },
+	{ code: '130', meaning: 'Interrupted' },
+];
+---
+
+<section id="agents" class="border-t border-hairline bg-canvas" aria-labelledby="agents-heading">
+	<div class="mx-auto max-w-page px-4 py-band sm:px-6">
+		<div class="grid min-w-0 items-start gap-12 lg:grid-cols-2 lg:gap-16">
+			<div class="order-2 min-w-0 lg:order-1">
+				<CodeWindow title=".cursor/mcp.json" meta="bermooda mcp init" html={mcpHtml} />
+			</div>
+			<div class="order-1 max-w-copy lg:order-2">
+				<p class="eyebrow">mcp init</p>
+				<h2 id="agents-heading" class="mt-3 text-band font-medium text-pretty text-ink">
+					Built for agents, too.
+				</h2>
+				<p class="mt-4 text-body text-mute">
+					One command connects Cursor to your shop. It reads the bootstrap API key written at install and
+					merges a <code class="font-mono text-[0.95em] text-ink">bermooda</code> server into your MCP config. Paste
+					the same block into Claude Desktop.
+				</p>
+				<p class="mt-3 text-body text-mute">
+					The agent works through the same Admin API as the admin UI, with the same scopes. No side
+					channel into the database.
+				</p>
+				<a
+					href="/docs/guides/agents"
+					class="mt-6 inline-flex text-[15px] font-medium tracking-tight text-accent transition duration-100 hover:text-accent-hover"
+				>
+					Agents guide →
+				</a>
+			</div>
+		</div>
+
+		<div class="mt-20 grid min-w-0 items-start gap-12 lg:grid-cols-2 lg:gap-16">
+			<div class="max-w-copy">
+				<p class="eyebrow">Scripting</p>
+				<h3 class="mt-3 text-band font-medium text-pretty text-ink">Quiet when piped. Honest on exit.</h3>
+				<p class="mt-4 text-body text-mute">
+					Every command takes <code class="font-mono text-[0.95em] text-ink">--cwd</code>, <code
+						class="font-mono text-[0.95em] text-ink">-y</code
+					>, <code class="font-mono text-[0.95em] text-ink">--json</code>, and <code
+						class="font-mono text-[0.95em] text-ink">--verbose</code
+					>. JSON output where it matters, and exit codes that tell your pipeline what broke.
+				</p>
+			</div>
+			<div class="overflow-hidden rounded-xl border border-hairline bg-canvas shadow-control">
+				<div class="border-b border-hairline px-4 py-2.5 font-mono text-[11px] text-mute">exit codes</div>
+				<ul class="grid grid-cols-2 gap-px bg-hairline sm:grid-cols-3">
+					{
+						exitCodes.map((row) => (
+							<li class="bg-canvas px-4 py-3">
+								<code class="font-mono text-xl text-ink">{row.code}</code>
+								<p class="mt-0.5 text-sm text-mute">{row.meaning}</p>
+							</li>
+						))
+					}
+				</ul>
+			</div>
+		</div>
+	</div>
+</section>

@@ -1,0 +1,29 @@
+---
+import { DOCS_URL } from '../../consts';
+import CodeWindow from '../CodeWindow.astro';
+
+const html = `<span class="text-accent">$</span> npm i -g @bermooda/cli@latest
+<span class="text-accent">$</span> bermooda install
+<span class="text-accent">$</span> cd bermooda && bermooda dev`;
+---
+
+<section class="border-t border-hairline bg-canvas" aria-labelledby="cli-cta-heading">
+	<div class="mx-auto max-w-page px-4 py-band sm:px-6">
+		<div class="mx-auto flex max-w-2xl flex-col items-center text-center">
+			<h2 id="cli-cta-heading" class="text-band font-medium text-pretty text-ink">
+				Three lines to a running shop.
+			</h2>
+			<p class="mt-4 max-w-copy text-body text-mute">
+				Answer a few prompts, open <code class="font-mono text-[0.95em] text-ink">localhost:3000</code>, and start
+				selling.
+			</p>
+			<div class="mt-10 w-full min-w-0 text-left">
+				<CodeWindow title="terminal" meta="Node.js ≥ 24" html={html} />
+			</div>
+			<div class="mt-10 flex flex-wrap items-center justify-center gap-3">
+				<a href={`${DOCS_URL}/getting-started`} class="btn btn-primary">Quick start</a>
+				<a href={`${DOCS_URL}/cli`} class="btn btn-secondary">CLI docs</a>
+			</div>
+		</div>
+	</div>
+</section>

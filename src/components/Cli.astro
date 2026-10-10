@@ -1,4 +1,6 @@
 ---
+import { CLI_URL } from '../consts';
+
 const commands = [
 	{ cmd: 'bermooda install', detail: 'Download the app, install deps, configure env & DB, create admin + store' },
 	{ cmd: 'bermooda dev', detail: 'Start the local server on port 3000' },
@@ -25,6 +27,12 @@ const commands = [
 					class="font-mono text-[0.95em] text-ink">bermooda help</code
 				> is built in.
 			</p>
+			<a
+				href={CLI_URL}
+				class="mt-6 inline-flex text-[15px] font-medium tracking-tight text-accent transition duration-100 hover:text-accent-hover"
+			>
+				Explore the CLI →
+			</a>
 		</div>
 
 		<div class="mt-12 overflow-hidden rounded-xl border border-hairline bg-canvas shadow-control">

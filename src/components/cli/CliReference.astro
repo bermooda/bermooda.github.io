@@ -1,0 +1,70 @@
+---
+import { DOCS_URL } from '../../consts';
+
+const groups = [
+	{
+		label: 'Shop',
+		commands: [
+			{ cmd: 'install [--local|--server]', detail: 'Download the app, deps, env, DB, admin, and store' },
+			{ cmd: 'update [--ref] [--dry-run]', detail: 'Update the shop to the latest app version' },
+			{ cmd: 'dev [--port]', detail: 'Start the development server' },
+			{ cmd: 'start', detail: 'Run production, building first if needed' },
+		],
+	},
+	{
+		label: 'Extensions',
+		commands: [
+			{ cmd: 'theme add|update|remove|list', detail: 'Manage app/themes/*' },
+			{ cmd: 'plugin add|update|remove|list', detail: 'Manage app/plugins/*' },
+			{ cmd: 'mcp init', detail: 'Write MCP config for this shop' },
+		],
+	},
+	{
+		label: 'CLI',
+		commands: [
+			{ cmd: 'version [--cli|--shop]', detail: 'Show CLI and shop versions' },
+			{ cmd: 'upgrade', detail: 'Upgrade @bermooda/cli itself' },
+			{ cmd: 'help [command]', detail: 'Built-in help for any command' },
+		],
+	},
+];
+---
+
+<section id="reference" class="border-t border-hairline bg-soft" aria-labelledby="reference-heading">
+	<div class="mx-auto max-w-page px-4 py-band sm:px-6">
+		<div class="flex flex-wrap items-end justify-between gap-6">
+			<div class="max-w-copy">
+				<p class="eyebrow">Reference</p>
+				<h2 id="reference-heading" class="mt-3 text-band font-medium text-pretty text-ink">Every command.</h2>
+			</div>
+			<a
+				href={`${DOCS_URL}/cli/commands`}
+				class="text-[15px] font-medium tracking-tight text-accent transition duration-100 hover:text-accent-hover"
+			>
+				Full flags in the docs →
+			</a>
+		</div>
+
+		<div class="mt-12 overflow-hidden rounded-xl border border-hairline bg-canvas shadow-control">
+			{
+				groups.map((group, i) => (
+					<div class:list={[i > 0 && 'border-t border-hairline']}>
+						<div class="border-b border-hairline bg-soft/60 px-4 py-2.5 font-mono text-[11px] text-mute">
+							{group.label}
+						</div>
+						<ul class="divide-y divide-hairline">
+							{group.commands.map((row) => (
+								<li class="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,22rem)_1fr] sm:items-baseline sm:gap-6">
+									<code class="font-mono text-[13px] text-ink sm:whitespace-nowrap">
+										<span class="text-accent">$</span> bermooda {row.cmd}
+									</code>
+									<p class="text-sm text-mute">{row.detail}</p>
+								</li>
+							))}
+						</ul>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</section>
