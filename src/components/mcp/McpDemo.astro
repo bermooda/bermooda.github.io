@@ -1,0 +1,238 @@
+---
+// Tabbed agent session that replays real `@bermooda/mcp` tool calls. Each line fades in
+// when its tab becomes visible; tabs auto-advance until the visitor picks one.
+const you = '<span class="text-accent">›</span>';
+const call = (tool: string, args = '') =>
+	`<span class="text-sky-300">⏺</span> <span class="text-white">${tool}</span>${args ? `<span class="text-white/50">(${args})</span>` : ''}`;
+const out = (s: string) => `<span class="text-white/40">  ⎿</span> ${s}`;
+const ok = '<span class="text-emerald-300">✔</span>';
+const dim = (s: string) => `<span class="text-white/40">${s}</span>`;
+const str = (s: string) => `<span class="text-emerald-300">${s}</span>`;
+
+const demos = [
+	{
+		id: 'ping',
+		label: 'ping',
+		lines: [
+			`${you} Is my shop connected?`,
+			'',
+			call('ping'),
+			out(`${ok} Connected to ${str('http://localhost:3000')}`),
+			out(`store ${str('"Demo Shop"')} · currency EUR · locale en`),
+			'',
+			dim('# URL and berm_ key verified against /api/admin/v1'),
+		],
+	},
+	{
+		id: 'setup',
+		label: 'setup_shop',
+		lines: [
+			`${you} Set up a coffee shop with two categories and a few products.`,
+			'',
+			call('setup_shop', 'dryRun: true'),
+			out('settings: general, currencies, shipping'),
+			out('categories: 2 · products: 6 · theme: default'),
+			'',
+			call('setup_shop', 'confirm: true'),
+			out(`${ok} 3 settings sections updated`),
+			out(`${ok} 2 categories, 6 products created`),
+		],
+	},
+	{
+		id: 'catalog',
+		label: 'catalog',
+		lines: [
+			`${you} Add a decaf to the coffee category, unpublished for now.`,
+			'',
+			call('list_categories'),
+			out('Coffee · Equipment'),
+			'',
+			call('upsert_product', `product: { title: ${str('"Decaf Colombia 250g"')}, published: false }`),
+			out(`${ok} Created Decaf Colombia 250g (draft)`),
+		],
+	},
+	{
+		id: 'orders',
+		label: 'orders',
+		lines: [
+			`${you} Cancel order #1042, the customer emailed.`,
+			'',
+			call('update_order_status', `id: ${str('"1042"')}, status: ${str('"cancelled"')}`),
+			out('<span class="text-amber-300">!</span> Refusing set order 1042 to cancelled: pass confirm=true'),
+			'',
+			call('update_order_status', `id: ${str('"1042"')}, status: ${str('"cancelled"')}, confirm: true`),
+			out(`${ok} Order #1042 → cancelled`),
+		],
+	},
+	{
+		id: 'reports',
+		label: 'reports',
+		lines: [
+			`${you} How did last week go?`,
+			'',
+			call('get_overview_kpis', `startDate: ${str('"2026-10-01"')}, endDate: ${str('"2026-10-07"')}`),
+			out('revenue 4,812.40 · orders 137 · AOV 35.13 · conversion 2.8%'),
+			'',
+			call('get_ops_metrics'),
+			out('3 abandoned checkouts · 2 variants low on stock'),
+		],
+	},
+];
+---
+
+<div
+	class="mcp-demo w-full min-w-0 overflow-hidden rounded-xl bg-ink-strong text-left shadow-mock"
+	data-mcp-demo
+>
+	<div class="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
+		<span class="size-2.5 shrink-0 rounded-full bg-[#FF5F57]"></span>
+		<span class="size-2.5 shrink-0 rounded-full bg-[#FEBC2E]"></span>
+		<span class="size-2.5 shrink-0 rounded-full bg-[#28C840]"></span>
+		<span class="ml-2 font-mono text-[11px] text-white/45">agent</span>
+		<span class="ml-auto font-mono text-[11px] text-white/35">@bermooda/mcp</span>
+	</div>
+
+	<div
+		class="flex gap-1 overflow-x-auto border-b border-white/10 px-2 py-1.5 [scrollbar-width:none]"
+		role="tablist"
+		aria-label="MCP tool calls"
+	>
+		{
+			demos.map((demo, i) => (
+				<button
+					type="button"
+					role="tab"
+					id={`mcp-tab-${demo.id}`}
+					aria-controls={`mcp-panel-${demo.id}`}
+					aria-selected={i === 0 ? 'true' : 'false'}
+					tabindex={i === 0 ? 0 : -1}
+					class="mcp-tab shrink-0 rounded-md px-2.5 py-1 font-mono text-[12px] text-white/50 transition duration-100 hover:text-white/80"
+				>
+					{demo.label}
+				</button>
+			))
+		}
+	</div>
+
+	<div class="relative h-[19rem] sm:h-[18rem]">
+		{
+			demos.map((demo, i) => (
+				<div
+					role="tabpanel"
+					id={`mcp-panel-${demo.id}`}
+					aria-labelledby={`mcp-tab-${demo.id}`}
+					hidden={i !== 0}
+					class="mcp-panel absolute inset-0 overflow-auto"
+				>
+					<div class="w-max min-w-full p-4 font-mono text-[12.5px] leading-relaxed text-white/90 sm:p-5 sm:text-sm">
+						{demo.lines.map((line, n) => (
+							<div class="mcp-line min-h-[1lh] whitespace-pre" style={`--i:${n}`} set:html={line} />
+						))}
+					</div>
+				</div>
+			))
+		}
+	</div>
+</div>
+
+<script>
+	document.querySelectorAll<HTMLElement>('[data-mcp-demo]').forEach((root) => {
+		const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+		const panels = [...root.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		let current = 0;
+		let timer: number | undefined;
+		let paused = false;
+
+		function select(index: number, focus = false) {
+			current = (index + tabs.length) % tabs.length;
+			tabs.forEach((tab, i) => {
+				const active = i === current;
+				tab.setAttribute('aria-selected', String(active));
+				tab.tabIndex = active ? 0 : -1;
+			});
+			panels.forEach((panel, i) => {
+				panel.hidden = i !== current;
+			});
+			if (focus) tabs[current].focus();
+			tabs[current].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+		}
+
+		function stop() {
+			window.clearInterval(timer);
+			timer = undefined;
+		}
+
+		function start() {
+			if (reduceMotion || timer !== undefined) return;
+			timer = window.setInterval(() => {
+				if (!paused && !document.hidden) select(current + 1);
+			}, 5200);
+		}
+
+		tabs.forEach((tab, i) => {
+			tab.addEventListener('click', () => {
+				stop();
+				select(i);
+			});
+			tab.addEventListener('keydown', (event) => {
+				const keys: Record<string, number> = {
+					ArrowRight: current + 1,
+					ArrowLeft: current - 1,
+					Home: 0,
+					End: tabs.length - 1,
+				};
+				if (!(event.key in keys)) return;
+				event.preventDefault();
+				stop();
+				select(keys[event.key], true);
+			});
+		});
+
+		root.addEventListener('mouseenter', () => (paused = true));
+		root.addEventListener('mouseleave', () => (paused = false));
+		root.addEventListener('focusin', () => (paused = true));
+		root.addEventListener('focusout', () => (paused = false));
+
+		// Only start cycling once the session is on screen.
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries.some((entry) => entry.isIntersecting)) {
+					start();
+					observer.disconnect();
+				}
+			},
+			{ threshold: 0.4 },
+		);
+		observer.observe(root);
+	});
+</script>
+
+<style>
+	.mcp-tab[aria-selected='true'] {
+		background: rgb(255 255 255 / 0.08);
+		color: rgb(255 255 255 / 0.95);
+	}
+
+	.mcp-line {
+		animation: mcp-line-in 0.35s ease-out both;
+		animation-delay: calc(var(--i) * 110ms + 150ms);
+	}
+
+	@keyframes mcp-line-in {
+		from {
+			opacity: 0;
+			transform: translateY(3px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.mcp-line {
+			animation: none;
+		}
+	}
+</style>

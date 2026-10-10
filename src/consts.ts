@@ -4,4 +4,6 @@ export const SITE_DESCRIPTION =
 export const GITHUB_URL = 'https://github.com/bermooda/bermooda';
 export const CLI_URL = '/cli';
 export const CLI_REPO_URL = 'https://github.com/bermooda/cli';
+export const MCP_URL = '/mcp';
+export const MCP_REPO_URL = 'https://github.com/bermooda/mcp';
 export const DOCS_URL = '/docs';

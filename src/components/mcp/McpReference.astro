@@ -1,0 +1,99 @@
+---
+import { MCP_REPO_URL } from '../../consts';
+
+const groups = [
+	{
+		label: 'Setup',
+		tools: [
+			{ name: 'ping', detail: 'Verify URL and API key' },
+			{ name: 'get_setup_status', detail: 'Bootstrap status' },
+			{ name: 'setup_shop', detail: 'Settings, categories, products, and theme in one call' },
+			{ name: 'get_settings · update_settings', detail: 'Read the snapshot or patch one section' },
+		],
+	},
+	{
+		label: 'Catalog',
+		tools: [
+			{ name: 'list_products · get_product', detail: 'Paginated list, or one product by id' },
+			{ name: 'upsert_product · delete_product', detail: 'Create, update, or delete a product' },
+			{ name: 'list_categories · get_category', detail: 'Category tree, or one category by id' },
+			{ name: 'create_category · update_category · delete_category', detail: 'Manage categories' },
+			{ name: 'import_products_csv', detail: 'Bulk import from CSV' },
+		],
+	},
+	{
+		label: 'Orders & inventory',
+		tools: [
+			{ name: 'list_orders · get_order', detail: 'Paginated orders, or one order in detail' },
+			{ name: 'update_order_status', detail: 'Move an order to a new status' },
+			{ name: 'list_inventory_locations', detail: 'Locations with inventory levels' },
+			{ name: 'set_inventory_level', detail: 'Set a variant quantity at a location' },
+		],
+	},
+	{
+		label: 'Storefront & integrations',
+		tools: [
+			{ name: 'list_themes · activate_theme', detail: 'Switch the active theme or save its settings' },
+			{ name: 'list_plugins · update_plugins', detail: 'Enable, disable, reorder, and configure plugins' },
+			{ name: '*_webhook_subscription', detail: 'List, get, create, update, and delete webhooks' },
+			{ name: 'upload_media', detail: 'Upload a file to shop media storage' },
+		],
+	},
+	{
+		label: 'Reports',
+		tools: [
+			{ name: 'get_overview_kpis · get_sales_over_time', detail: 'Revenue, orders, AOV, conversion, daily sales' },
+			{ name: 'get_top_products · get_sales_by_category', detail: 'What sells, and where' },
+			{ name: 'get_customer_metrics · get_inventory_metrics', detail: 'New vs. returning, low and out of stock' },
+			{ name: 'get_ops_metrics · get_export_metrics', detail: 'Abandoned checkouts, export health' },
+			{ name: 'get_dashboard_report', detail: 'The full composed analytics payload' },
+		],
+	},
+	{
+		label: 'Resources',
+		tools: [
+			{ name: 'bermooda://settings', detail: 'Settings snapshot' },
+			{ name: 'bermooda://catalog/summary', detail: 'First product page and the category tree' },
+		],
+	},
+];
+---
+
+<section id="reference" class="border-t border-hairline bg-soft" aria-labelledby="reference-heading">
+	<div class="mx-auto max-w-page px-4 py-band sm:px-6">
+		<div class="flex flex-wrap items-end justify-between gap-6">
+			<div class="max-w-copy">
+				<p class="eyebrow">Reference</p>
+				<h2 id="reference-heading" class="mt-3 text-band font-medium text-pretty text-ink">Every tool.</h2>
+			</div>
+			<a
+				href={`${MCP_REPO_URL}#tools`}
+				class="text-[15px] font-medium tracking-tight text-accent transition duration-100 hover:text-accent-hover"
+				target="_blank"
+				rel="noopener noreferrer"
+			>
+				Arguments in the README →
+			</a>
+		</div>
+
+		<div class="mt-12 overflow-hidden rounded-xl border border-hairline bg-canvas shadow-control">
+			{
+				groups.map((group, i) => (
+					<div class:list={[i > 0 && 'border-t border-hairline']}>
+						<div class="border-b border-hairline bg-soft/60 px-4 py-2.5 font-mono text-[11px] text-mute">
+							{group.label}
+						</div>
+						<ul class="divide-y divide-hairline">
+							{group.tools.map((row) => (
+								<li class="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,26rem)_1fr] sm:items-baseline sm:gap-6">
+									<code class="font-mono text-[13px] text-ink">{row.name}</code>
+									<p class="text-sm text-mute">{row.detail}</p>
+								</li>
+							))}
+						</ul>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</section>

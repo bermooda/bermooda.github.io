@@ -1,0 +1,30 @@
+---
+import { DOCS_URL } from '../../consts';
+import CodeWindow from '../CodeWindow.astro';
+
+const html = `<span class="text-accent">$</span> npm i -g @bermooda/cli@latest
+<span class="text-accent">$</span> bermooda install
+<span class="text-accent">$</span> cd bermooda && bermooda mcp init`;
+---
+
+<section class="border-t border-hairline bg-canvas" aria-labelledby="mcp-cta-heading">
+	<div class="mx-auto max-w-page px-4 py-band sm:px-6">
+		<div class="mx-auto flex max-w-2xl flex-col items-center text-center">
+			<h2 id="mcp-cta-heading" class="text-band font-medium text-pretty text-ink">
+				Three lines to an agent-ready shop.
+			</h2>
+			<p class="mt-4 max-w-copy text-body text-mute">
+				Install, write the config, restart your editor. Then ask your agent to <code
+					class="font-mono text-[0.95em] text-ink">ping</code
+				>.
+			</p>
+			<div class="mt-10 w-full min-w-0 text-left">
+				<CodeWindow title="terminal" meta="Node.js ≥ 24" html={html} />
+			</div>
+			<div class="mt-10 flex flex-wrap items-center justify-center gap-3">
+				<a href={`${DOCS_URL}/guides/agents`} class="btn btn-primary">Agents guide</a>
+				<a href={`${DOCS_URL}/api/authentication`} class="btn btn-secondary">API keys</a>
+			</div>
+		</div>
+	</div>
+</section>

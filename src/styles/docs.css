@@ -61,7 +61,10 @@
 	background: color-mix(in srgb, var(--color-accent-500) 18%, transparent);
 }
 
-site-header {
+/* Match the landing header: translucent nav with a backdrop blur. */
+.page > .header,
+mobile-starlight-toc nav {
+	-webkit-backdrop-filter: blur(8px);
 	backdrop-filter: blur(8px);
 }
 
