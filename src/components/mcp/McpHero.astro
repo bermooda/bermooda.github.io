@@ -1,22 +1,22 @@
 ---
-import CliDemo from './CliDemo.astro';
+import McpDemo from './McpDemo.astro';
 
-const installCmd = 'npm i -g @bermooda/cli@latest';
+const runCmd = 'npx -y @bermooda/mcp';
 ---
 
 <section class="relative overflow-hidden">
 	<div class="relative mx-auto max-w-page px-4 pt-hero pb-20 sm:px-6 lg:pb-28">
-		<p class="animate-fade-up eyebrow text-center">bermooda CLI</p>
+		<p class="animate-fade-up eyebrow text-center">bermooda MCP</p>
 		<h1
 			class="animate-fade-up animation-delay-200 relative z-10 mx-auto mt-4 max-w-4xl text-center text-hero font-medium text-pretty text-ink"
 		>
-			From zero to shop in one command
+			Your shop, ready for agents
 		</h1>
 		<p
 			class="animate-fade-up animation-delay-400 relative z-10 mx-auto mt-5 max-w-copy text-center text-lg text-balance text-mute sm:text-xl"
 		>
-			<code class="font-mono text-[0.9em] text-ink">bermooda</code> installs, runs, updates, and extends your
-			shop. Themes, plugins, and agent setup are commands, not chores.
+			<code class="font-mono text-[0.9em] text-ink">@bermooda/mcp</code> gives Cursor, Claude, and any MCP client
+			typed tools for settings, catalog, orders, and reports. Every call goes through the Admin API.
 		</p>
 
 		<div class="relative pt-8">
@@ -30,11 +30,11 @@ const installCmd = 'npm i -g @bermooda/cli@latest';
 					height="100%"
 				>
 					<defs>
-						<pattern id="cli-diamond-grid" x="-1" y="-1" width="40" height="40" patternUnits="userSpaceOnUse">
+						<pattern id="mcp-diamond-grid" x="-1" y="-1" width="40" height="40" patternUnits="userSpaceOnUse">
 							<path d="M 40 0 L 0 0 0 40" fill="transparent" stroke="currentColor" stroke-width="1"></path>
 						</pattern>
 					</defs>
-					<rect fill="url(#cli-diamond-grid)" width="100%" height="100%"></rect>
+					<rect fill="url(#mcp-diamond-grid)" width="100%" height="100%"></rect>
 				</svg>
 			</div>
 
@@ -43,12 +43,12 @@ const installCmd = 'npm i -g @bermooda/cli@latest';
 					class="flex h-12 w-full max-w-md min-w-0 items-center gap-3 rounded-lg border border-hairline bg-canvas pr-1.5 pl-4 shadow-control"
 				>
 					<span class="font-mono text-[13px] text-accent" aria-hidden="true">$</span>
-					<code class="min-w-0 flex-1 truncate font-mono text-[13px] text-ink sm:text-sm">{installCmd}</code>
+					<code class="min-w-0 flex-1 truncate font-mono text-[13px] text-ink sm:text-sm">{runCmd}</code>
 					<button
 						type="button"
 						class="copy-btn inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-[13px] font-medium tracking-tight text-mute transition duration-100 hover:bg-soft hover:text-ink"
-						data-copy={installCmd}
-						aria-label="Copy install command"
+						data-copy={runCmd}
+						aria-label="Copy run command"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -68,11 +68,11 @@ const installCmd = 'npm i -g @bermooda/cli@latest';
 						<span data-copy-label>Copy</span>
 					</button>
 				</div>
-				<p class="font-mono text-[11px] text-mute">Node.js ≥ 24 · MIT licensed</p>
+				<p class="font-mono text-[11px] text-mute">Node.js ≥ 22.22 · stdio or HTTP · MIT licensed</p>
 			</div>
 
 			<div class="animate-fade-up animation-delay-400 relative z-10 mx-auto mt-14 w-full max-w-3xl min-w-0">
-				<CliDemo />
+				<McpDemo />
 			</div>
 		</div>
 	</div>

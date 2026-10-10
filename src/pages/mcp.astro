@@ -1,0 +1,39 @@
+---
+import Announcement from '../components/Announcement.astro';
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import McpCapabilities from '../components/mcp/McpCapabilities.astro';
+import McpConnect from '../components/mcp/McpConnect.astro';
+import McpCta from '../components/mcp/McpCta.astro';
+import McpGuardrails from '../components/mcp/McpGuardrails.astro';
+import McpHero from '../components/mcp/McpHero.astro';
+import McpReference from '../components/mcp/McpReference.astro';
+import McpTransports from '../components/mcp/McpTransports.astro';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead
+			title="MCP"
+			description="@bermooda/mcp gives Cursor, Claude, and any MCP client typed tools for a bermooda shop: settings, catalog, orders, themes, plugins, and reports over the Admin API."
+		/>
+	</head>
+	<body class="relative flex min-h-screen flex-col">
+		<div class="page-grain pointer-events-none fixed inset-0 z-[60] opacity-[0.04] mix-blend-multiply" aria-hidden="true"
+		></div>
+		<Announcement />
+		<Header />
+		<main class="flex-1">
+			<McpHero />
+			<McpCapabilities />
+			<McpConnect />
+			<McpGuardrails />
+			<McpTransports />
+			<McpReference />
+			<McpCta />
+		</main>
+		<Footer />
+	</body>
+</html>
