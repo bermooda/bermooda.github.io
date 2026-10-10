@@ -1,5 +1,4 @@
 ---
-import { DOCS_URL, MCP_REPO_URL } from '../../consts';
 import McpDemo from './McpDemo.astro';
 
 const runCmd = 'npx -y @bermooda/mcp';
@@ -68,12 +67,6 @@ const runCmd = 'npx -y @bermooda/mcp';
 						</svg>
 						<span data-copy-label>Copy</span>
 					</button>
-				</div>
-				<div class="flex flex-wrap items-center justify-center gap-3">
-					<a href={`${DOCS_URL}/guides/agents`} class="btn btn-primary">Read the agents guide</a>
-					<a href={MCP_REPO_URL} class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
-						View on GitHub
-					</a>
 				</div>
 				<p class="font-mono text-[11px] text-mute">Node.js ≥ 22.22 · stdio or HTTP · MIT licensed</p>
 			</div>
